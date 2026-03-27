@@ -1,0 +1,12 @@
+# Credentials - never commit
+credentials.json
+*.json
+!reports/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Reports are committed by GitHub Actions
+# but local test reports can be ignored
