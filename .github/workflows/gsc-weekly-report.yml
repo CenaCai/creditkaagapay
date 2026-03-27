@@ -5,7 +5,8 @@ on:
     # 每周一 UTC 08:00 (北京时间 16:00) 自动运行
     - cron: '0 8 * * 1'
   workflow_dispatch:  # 允许手动触发
-
+permissions:
+  contents: write
 jobs:
   generate-report:
     runs-on: ubuntu-latest
