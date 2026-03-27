@@ -11,7 +11,7 @@ import random
 import re
 import time
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -168,11 +168,8 @@ def pick_topic(existing_titles):
 
 
 def generate_article(topic):
-    """Use Gemini to generate an SEO-optimized blog article."""
-    import google.generativeai as genai
-
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    """Use Gemini REST API to generate an SEO-optimized blog article."""
+    GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     prompt = f"""You are an expert SEO content writer for Credit Kaagapay, a fintech app in the Philippines that helps users check their credit scores, access CIC credit reports, and find AI-powered loan recommendations.
 
@@ -206,8 +203,31 @@ Write a comprehensive, SEO-optimized blog article with the following requirement
 
 IMPORTANT: Return ONLY valid JSON, no markdown code fences or extra text."""
 
-    response = model.generate_content(prompt)
-    text = response.text.strip()
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.8,
+            "maxOutputTokens": 8192,
+        },
+    }
+
+    # Retry up to 3 times with backoff
+    for attempt in range(3):
+        resp = requests.post(GEMINI_URL, json=payload, timeout=120)
+        if resp.status_code == 200:
+            break
+        elif resp.status_code == 429:
+            wait = 30 * (attempt + 1)
+            print(f"  Rate limited, waiting {wait}s (attempt {attempt + 1}/3)...")
+            time.sleep(wait)
+        else:
+            print(f"  Gemini API error {resp.status_code}: {resp.text[:300]}")
+            if attempt == 2:
+                sys.exit(1)
+            time.sleep(10)
+
+    data = resp.json()
+    text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
     # Clean up potential markdown code fences
     if text.startswith("```"):
@@ -352,7 +372,7 @@ def main():
         sys.exit(1)
 
     print(f"=== Credit Kaagapay Auto Blog Poster ===")
-    print(f"Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
     print()
 
     # Get existing posts to avoid duplicates
