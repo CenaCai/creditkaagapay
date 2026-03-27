@@ -1,0 +1,28 @@
+name: Auto Blog Post
+
+on:
+  schedule:
+      - cron: '0 6 * * 2,5'
+        workflow_dispatch:
+
+        permissions:
+          contents: read
+
+          jobs:
+            publish-article:
+                runs-on: ubuntu-latest
+                    steps:
+                          - name: Checkout
+                                  uses: actions/checkout@v4
+                                        - name: Setup Python
+                                                uses: actions/setup-python@v5
+                                                        with:
+                                                                  python-version: '3.11'
+                                                                        - name: Install dependencies
+                                                                                run: pip install -r auto_blog/requirements.txt
+                                                                                      - name: Generate and publish article
+                                                                                              env:
+                                                                                                        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                                                                                                                  WP_USERNAME: ${{ secrets.WP_USERNAME }}
+                                                                                                                            WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+                                                                                                                                    run: python auto_blog/auto_post.py
