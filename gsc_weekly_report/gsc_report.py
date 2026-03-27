@@ -285,7 +285,42 @@ def main():
             sys.exit(1)
         return
 
-    generate_report(service, output_path=args.output)
+    report_path = generate_report(service, output_path=args.output)
+    update_index(report_path)
+
+
+def update_index(report_path):
+    """Update the root index.html with the latest report list."""
+    import glob
+    import re
+
+    repo_root = BASE_DIR.parent
+    index_file = repo_root / "index.html"
+    if not index_file.exists():
+        print("index.html 不存在，跳过更新")
+        return
+
+    # Find all report files
+    report_files = sorted(glob.glob(str(REPORTS_DIR / "weekly_report_*.html")), reverse=True)
+    entries = []
+    for f in report_files:
+        fname = Path(f).name
+        match = re.search(r"weekly_report_(\d{4}-\d{2}-\d{2})\.html", fname)
+        if match:
+            date = match.group(1)
+            rel_path = f"gsc_weekly_report/reports/{fname}"
+            entries.append(f"  {{ date: '{date}', file: '{rel_path}' }}")
+
+    js_array = "[\n" + ",\n".join(entries) + "\n]"
+    content = index_file.read_text(encoding="utf-8")
+    content = re.sub(
+        r"const reports = \[.*?\];",
+        f"const reports = {js_array};",
+        content,
+        flags=re.DOTALL,
+    )
+    index_file.write_text(content, encoding="utf-8")
+    print(f"index.html 已更新，共 {len(entries)} 份报告")
 
 
 if __name__ == "__main__":
