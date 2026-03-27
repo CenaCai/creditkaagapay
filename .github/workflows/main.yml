@@ -1,0 +1,40 @@
+name: GSC Weekly Report
+
+on:
+  schedule:
+    # 每周一 UTC 08:00 (北京时间 16:00) 自动运行
+    - cron: '0 8 * * 1'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r gsc_weekly_report/requirements.txt
+
+      - name: Generate report
+        env:
+          GSC_CREDENTIALS_JSON: ${{ secrets.GSC_CREDENTIALS_JSON }}
+        run: python gsc_weekly_report/gsc_report.py
+
+      - name: Commit and push report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gsc_weekly_report/reports/
+          if git diff --staged --quiet; then
+            echo "No new report to commit"
+          else
+            git commit -m "Weekly SEO report $(date +%Y-%m-%d)"
+            git push
+          fi
