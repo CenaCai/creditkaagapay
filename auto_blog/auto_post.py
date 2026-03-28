@@ -42,182 +42,303 @@ EXISTING_ARTICLES = {
 
 
 # ---------------------------------------------------------------------------
-# Topics (with real data points for grounding)
+# Keyword Matrix System
+# (10 core) × (15 modifiers) × (10 audience) × (8 geo) = 12,000+ combos
 # ---------------------------------------------------------------------------
-def load_topics():
-    """Return the pool of SEO topics with real Philippine financial data."""
-    return [
-        {
-            "keyword": "credit card application Philippines",
-            "angle": "first-time applicant guide with actual bank requirements and approval tips",
-            "category": "Credit Cards",
-            "img_query": "credit card application form",
-            "data_points": (
-                "BPI: min ₱15k/mo income, 21 yrs old. BDO: min ₱10k/mo (Visa Classic). "
-                "Metrobank: min ₱15k/mo. UnionBank: min ₱12k/mo. Processing: 7-14 days. "
-                "Annual fees: ₱1,500-₱5,000 (often waived 1st year). Interest: 2-3.5%/month."
-            ),
-        },
-        {
-            "keyword": "improve credit score fast Philippines",
-            "angle": "month-by-month plan with real impact numbers on your CIC score",
-            "category": "Credit Education",
-            "img_query": "financial growth chart upward",
-            "data_points": (
-                "CIC score range: 300-850. >700 = good. On-time payment = ~35% of score. "
-                "Utilization below 30% boosts score 20-40 points in 2-3 months. "
-                "Each new account inquiry drops score ~15 points. "
-                "Dispute errors at CIC: free, takes 30 days. Negative records: fall off after 5 years."
-            ),
-        },
-        {
-            "keyword": "debt consolidation Philippines",
-            "angle": "real bank programs with rates and a savings calculation example",
-            "category": "Financial Planning",
-            "img_query": "debt management planning documents",
-            "data_points": (
-                "CIMB balance transfer: 0% for 3 months then 1.49%/mo. "
-                "BPI: 0.59%/mo for 12-36 months. Metrobank: 0.79%/mo. "
-                "Average CC interest without consolidation: 2-3.5%/mo (24-42% APR). "
-                "₱50k debt at 3%/mo vs 0.79%/mo saves ₱13,260/year."
-            ),
-        },
-        {
-            "keyword": "salary loan Philippines 2026",
-            "angle": "SSS vs Pag-IBIG vs bank salary loans - which is cheapest?",
-            "category": "Loans",
-            "img_query": "salary paycheck office desk",
-            "data_points": (
-                "SSS: up to ₱52k, 10%/yr, 24 payments. "
-                "Pag-IBIG MPL: up to 80% of savings, 10.5%/yr, max 24 months. "
-                "BPI: ₱20k-₱2M, 1.2-1.6%/mo. CIMB: ₱30k-₱1M, from 1.19%/mo."
-            ),
-        },
-        {
-            "keyword": "financial literacy Philippines",
-            "angle": "the 5 money mistakes most Filipinos make (with BSP survey data)",
-            "category": "Financial Planning",
-            "img_query": "financial planning notebook money",
-            "data_points": (
-                "BSP 2023: only 2% of adult Filipinos are financially literate on all 3 dimensions. "
-                "53% have no emergency fund. Median household income: ~₱22k/month (PSA 2023). "
-                "Ideal emergency fund: 3-6 months = ₱66k-₱132k for median household."
-            ),
-        },
-        {
-            "keyword": "home loan Philippines 2026",
-            "angle": "actual rates from top 5 banks plus a monthly payment example",
-            "category": "Loans",
-            "img_query": "house keys home buying Philippines",
-            "data_points": (
-                "BDO: 6.5% fixed 1yr, 7.5% 3yr. BPI: 6.25% 1yr, 7.0% 3yr. "
-                "Metrobank: 6.88% 1yr. Pag-IBIG: 3% (<₱750k) or 6.5% (>₱750k), up to ₱6M, 30yr. "
-                "Down payment: 10-20%. Example: ₱3M at 6.5% for 20yr = ₱22,363/mo."
-            ),
-        },
-        {
-            "keyword": "SSS loan application online",
-            "angle": "exact step-by-step process at my.sss.gov.ph with requirements",
-            "category": "Government Services",
-            "img_query": "online application form government",
-            "data_points": (
-                "Need: 36 contributions total, 6 within last 12 months. "
-                "Max: avg monthly salary credit × 24 (cap ₱52,000). Interest: 10%/yr. "
-                "Apply at my.sss.gov.ph. Processing: 3-5 business days. Disbursement via PESONet."
-            ),
-        },
-        {
-            "keyword": "Pag-IBIG housing loan 2026",
-            "angle": "complete requirements checklist and monthly payment computation",
-            "category": "Government Services",
-            "img_query": "housing loan documents family home",
-            "data_points": (
-                "Need: 24 monthly contributions. Loan: up to ₱6M regular, ₱10M affordable. "
-                "Rate: 3%/yr (≤₱750k), 6.5%/yr (>₱750k). Max term: 30 years. "
-                "₱2M at 6.5% for 30yr = ₱12,639/mo. Processing: 15-20 working days."
-            ),
-        },
-        {
-            "keyword": "online lending apps Philippines safe",
-            "angle": "SEC-registered vs illegal - a checklist to protect yourself",
-            "category": "Loans",
-            "img_query": "mobile phone lending app",
-            "data_points": (
-                "SEC-registered (2026): Tonik, Maya Credit, CIMB, Tala, Cashalo, Lendly. "
-                "Red flags: requires contacts/gallery access, interest >15%/month, no SEC number. "
-                "BSP limit: max 6%/month for digital lenders. SEC blocked 200+ apps in 2025."
-            ),
-        },
-        {
-            "keyword": "build credit history Philippines",
-            "angle": "zero-to-700 roadmap for fresh graduates (month by month)",
-            "category": "Credit Education",
-            "img_query": "young professional career growth",
-            "data_points": (
-                "Timeline: 6 months for CIC record, 12-18 months for 650+. "
-                "Starters: secured CC (BPI/BDO ₱10k deposit), postpaid plan (Globe/Smart). "
-                "CIMB credit builder: ₱30k min. After 12 months: eligible for unsecured cards."
-            ),
-        },
-        {
-            "keyword": "emergency fund Philippines 2026",
-            "angle": "best high-yield accounts to park your fund (rate comparison)",
-            "category": "Financial Planning",
-            "img_query": "savings piggy bank money coins",
-            "data_points": (
-                "Tonik: up to 5.5%/yr. Maya: 3.5%/yr. SeaBank: 5%/yr (promo). "
-                "CIMB UpSave: 2.6%/yr. Traditional banks: 0.1-0.5%/yr. "
-                "Inflation 2025: ~3.5%. Savings below 3.5%/yr lose purchasing power."
-            ),
-        },
-        {
-            "keyword": "car loan Philippines 2026",
-            "angle": "bank vs dealer financing - which actually saves you money?",
-            "category": "Loans",
-            "img_query": "car purchase dealership keys",
-            "data_points": (
-                "Banks: BPI 6-8%/yr, BDO 7-10%/yr, EastWest 8-12%/yr. "
-                "Dealer in-house: 12-18%/yr hidden as 'add-on'. "
-                "₱800k loan 5yr: bank 7% = ₱15,842/mo, dealer 15% add-on = ₱19,333/mo. "
-                "Savings choosing bank: ₱209,460 over 5 years. Down payment: 20-30%."
-            ),
-        },
-        {
-            "keyword": "GCash credit features 2026",
-            "angle": "GCredit, GGives, GLoan - limits, rates, and CIC impact",
-            "category": "Fintech",
-            "img_query": "mobile payment digital wallet smartphone",
-            "data_points": (
-                "GCredit: ₱1k-₱30k limit, 5% fee. Reports to CIC since 2023. "
-                "GGives: 3-12 months installment, 3.49% service fee. "
-                "GLoan (via CIMB/Fuse): ₱5k-₱25k, 3.99-5.99%/mo, 6-12 months. "
-                "Late payment: 5% penalty + negative CIC record."
-            ),
-        },
-        {
-            "keyword": "loan calculator Philippines",
-            "angle": "how to calculate the TRUE cost of a loan (EIR vs add-on rate explained)",
-            "category": "Financial Planning",
-            "img_query": "calculator finance money planning",
-            "data_points": (
-                "Add-on 1.5%/mo on ₱100k for 12mo: total interest ₱18k, EIR = 32.4%/yr. "
-                "Diminishing 1.5%/mo: total interest ₱9,750, EIR = 18%/yr. "
-                "BSP requires EIR disclosure since 2019. Processing fees (1-3%) add to cost."
-            ),
-        },
-        {
-            "keyword": "bad credit loan Philippines",
-            "angle": "realistic options that won't trap you deeper (and what to avoid)",
-            "category": "Loans",
-            "img_query": "financial difficulty stress help",
-            "data_points": (
-                "Options: SSS salary loan (no credit check), Pag-IBIG MPL, cooperative loans, pawnshop. "
-                "Avoid: 5-6 lending (20%/month), unregistered apps. "
-                "Rebuild: secured CC → 6 months on-time → better options. "
-                "Banks have hardship programs: lower rate + extended term on request."
-            ),
-        },
+CORE_WORDS = [
+    "loan", "cash loan", "online loan", "quick loan", "fast loan",
+    "personal loan", "credit loan", "money loan", "salary loan", "emergency loan",
+]
+
+MODIFIERS = [
+    "fast", "instant", "quick approval", "same day", "24 hours",
+    "low interest", "legit", "safe", "best", "top",
+    "easy approval", "no rejection", "guaranteed",
+]
+
+AUDIENCE_WORDS = [
+    "no payslip", "unemployed", "with bad credit", "no credit history",
+    "self employed", "OFW", "student", "first time borrower", "low income",
+]
+
+GEO_WORDS = [
+    "philippines", "manila", "makati", "cebu",
+    "davao", "quezon city", "pasig", "taguig",
+]
+
+# High-value keyword lists (priority selection)
+HIGH_TRAFFIC_KEYWORDS = [
+    "online loan philippines", "fast loan philippines", "cash loan philippines",
+    "personal loan philippines", "loan app philippines", "quick cash loan",
+    "instant loan approval", "emergency loan philippines",
+]
+
+HIGH_CONVERSION_KEYWORDS = [
+    "loan no payslip philippines", "loan for unemployed philippines",
+    "loan with bad credit philippines", "instant cash loan same day",
+    "loan easy approval no documents", "guaranteed loan approval philippines",
+    "loan for OFW philippines", "loan for students philippines",
+]
+
+GEO_KEYWORDS = [
+    "cash loan manila", "personal loan cebu", "loan app makati",
+    "fast loan davao", "emergency loan quezon city",
+    "online loan pasig", "salary loan taguig",
+]
+
+APP_COMPETITOR_KEYWORDS = [
+    "best loan app 2026 philippines", "legit loan app no rejection",
+    "loan app low interest rate", "loan app instant approval philippines",
+    "tala vs cashalo vs tonik 2026",
+]
+
+COMPARISON_KEYWORDS = [
+    "SSS loan vs Pag-IBIG loan", "bank loan vs online loan philippines",
+    "credit card vs personal loan philippines",
+    "GCash GLoan vs Maya Credit 2026",
+]
+
+CREDIT_KEYWORDS = [
+    "credit score philippines free", "how to check CIC credit report",
+    "improve credit score fast philippines",
+    "credit card application first time philippines",
+    "build credit history from zero philippines",
+]
+
+# Category-based data points (keyed by core word type)
+CATEGORY_DATA_POINTS = {
+    "loan": (
+        "SSS salary loan: up to ₱52k, 10%/yr, 24 payments. "
+        "Pag-IBIG MPL: up to 80% of savings, 10.5%/yr. "
+        "BPI personal loan: ₱20k-₱2M, 1.2-1.6%/mo. CIMB: from 1.19%/mo. "
+        "BSP max rate for digital lenders: 6%/month. SEC blocked 200+ illegal apps in 2025."
+    ),
+    "cash loan": (
+        "Tonik Quick Loan: up to ₱50k, 1.59%/mo, disbursed in 1 hour. "
+        "Maya Credit: ₱2k-₱30k, 3.5% flat fee. Cashalo: ₱1k-₱25k, 2.99%/mo. "
+        "GCash GLoan: ₱5k-₱25k, 3.99-5.99%/mo. Tala: ₱1k-₱15k, service fee varies. "
+        "Average Filipino emergency expense: ₱15k-₱30k. 53% have no emergency fund (BSP)."
+    ),
+    "online loan": (
+        "SEC-registered online lenders (2026): Tonik, Maya, CIMB, Tala, Cashalo, Lendly. "
+        "Red flags: requires contacts/gallery access, interest >15%/month, no SEC number. "
+        "BSP limit: max 6%/month for digital lenders. Process: 5-30 min approval, same-day disbursement. "
+        "Typical requirements: valid ID, selfie, phone number, bank/e-wallet account."
+    ),
+    "quick loan": (
+        "Fastest approvals: Tonik (1 hour), Maya (30 min), GCash GLoan (5 min). "
+        "Same-day disbursement via GCash, Maya, or bank transfer (PESONet/InstaPay). "
+        "InstaPay limit: ₱50k/transaction. PESONet: no limit but next-day for some banks. "
+        "Quick loans typically charge 2-5% higher rates than standard bank loans."
+    ),
+    "fast loan": (
+        "Fastest approvals: Tonik (1 hour), Maya (30 min), GCash GLoan (5 min). "
+        "Same-day disbursement via GCash, Maya, or bank transfer (PESONet/InstaPay). "
+        "InstaPay limit: ₱50k/transaction. PESONet: no limit but next-day for some banks. "
+        "Quick loans typically charge 2-5% higher rates than standard bank loans."
+    ),
+    "personal loan": (
+        "BPI: ₱20k-₱2M, 1.2-1.6%/mo, min income ₱15k. "
+        "BDO: ₱10k-₱3M, 1.39%/mo, min income ₱15k. "
+        "CIMB: ₱30k-₱1M, from 1.19%/mo, no min income stated. "
+        "Metrobank: ₱20k-₱1M, 1.5%/mo. Processing: 3-7 business days."
+    ),
+    "credit loan": (
+        "CIC score range: 300-850. >700 = good. On-time payment = ~35% of score. "
+        "Credit card interest: 2-3.5%/month (24-42% APR). "
+        "Balance transfer: BPI 0.59%/mo, CIMB 0% for 3 months then 1.49%/mo. "
+        "Annual fees: ₱1,500-₱5,000. First-year waiver common."
+    ),
+    "money loan": (
+        "BSP 2023: only 2% of Filipino adults are financially literate on all 3 dimensions. "
+        "53% have no emergency fund. Median household income: ~₱22k/month (PSA 2023). "
+        "5-6 lending (informal): 20%/month interest — AVOID. "
+        "Cooperative loans: 6-12%/yr, require membership (₱500-₱2k share capital)."
+    ),
+    "salary loan": (
+        "SSS: up to ₱52k, 10%/yr, 24 payments. Need 36 contributions, 6 within last 12 months. "
+        "Pag-IBIG MPL: up to 80% of savings, 10.5%/yr, max 24 months. Need 24 contributions. "
+        "BPI salary loan: ₱20k-₱2M, 1.2-1.6%/mo. CIMB: ₱30k-₱1M, from 1.19%/mo. "
+        "Apply SSS at my.sss.gov.ph. Processing: 3-5 business days. Disbursement via PESONet."
+    ),
+    "emergency loan": (
+        "Options: SSS salary loan (no credit check, 10%/yr), Pag-IBIG MPL (10.5%/yr). "
+        "Digital: Tonik Quick Loan (1 hour), GCash GLoan (5 min), Maya Credit (30 min). "
+        "Avoid: 5-6 lending (20%/month), unregistered apps. "
+        "Average Filipino emergency: ₱15k-₱30k. Ideal emergency fund: 3-6 months expenses."
+    ),
+    "credit": (
+        "CIC score range: 300-850. >700 = good. On-time payment = ~35% of score. "
+        "Utilization below 30% boosts score 20-40 points in 2-3 months. "
+        "Each new inquiry drops score ~15 points. Negative records: fall off after 5 years. "
+        "Free CIC report: request via creditinfo.gov.ph. Dispute errors: free, takes 30 days."
+    ),
+    "comparison": (
+        "SSS: 10%/yr, up to ₱52k. Pag-IBIG: 10.5%/yr, up to 80% of savings. "
+        "BPI: 1.2-1.6%/mo. CIMB: from 1.19%/mo. BDO: 1.39%/mo. "
+        "GCash GLoan: 3.99-5.99%/mo. Maya Credit: 3.5% flat fee. "
+        "Add-on rate 1.5%/mo = EIR 32.4%/yr. Diminishing 1.5%/mo = EIR 18%/yr."
+    ),
+}
+
+# Angles by audience type
+AUDIENCE_ANGLES = {
+    "no payslip": "options that don't require payslip or employment certificate",
+    "unemployed": "legitimate loan options for those between jobs (with real alternatives)",
+    "with bad credit": "how to get approved even with a low CIC score, plus rebuilding tips",
+    "no credit history": "first-timer guide to building credit from zero and getting approved",
+    "self employed": "documentation tricks and best lenders for freelancers and business owners",
+    "OFW": "best remittance-linked loan products and overseas-friendly application process",
+    "student": "student-friendly options with low requirements and small amounts",
+    "first time borrower": "step-by-step for your very first loan application in the Philippines",
+    "low income": "micro-loans and government programs for below-median-income Filipinos",
+}
+
+# Image queries by core word
+IMG_QUERIES = {
+    "loan": "loan application documents office",
+    "cash loan": "cash money peso bills",
+    "online loan": "mobile phone lending app",
+    "quick loan": "fast approval smartphone",
+    "fast loan": "fast approval smartphone",
+    "personal loan": "personal finance planning documents",
+    "credit loan": "credit card bank application",
+    "money loan": "money coins savings planning",
+    "salary loan": "salary paycheck office desk",
+    "emergency loan": "emergency financial help",
+    "credit": "credit score report financial",
+    "comparison": "comparison chart financial planning",
+}
+
+# Category mapping
+CORE_CATEGORIES = {
+    "loan": "Loans",
+    "cash loan": "Loans",
+    "online loan": "Loans",
+    "quick loan": "Loans",
+    "fast loan": "Loans",
+    "personal loan": "Loans",
+    "credit loan": "Credit Cards",
+    "money loan": "Financial Planning",
+    "salary loan": "Government Services",
+    "emergency loan": "Loans",
+    "credit": "Credit Education",
+    "comparison": "Financial Planning",
+}
+
+
+def generate_topic(existing_titles):
+    """Generate a topic from the keyword matrix, prioritizing high-value keywords."""
+
+    # Priority tiers: try high-value keywords first, then matrix combos
+    priority_pools = [
+        HIGH_TRAFFIC_KEYWORDS,
+        HIGH_CONVERSION_KEYWORDS,
+        CREDIT_KEYWORDS,
+        COMPARISON_KEYWORDS,
+        APP_COMPETITOR_KEYWORDS,
+        GEO_KEYWORDS,
     ]
+
+    # 60% chance to pick from priority pools, 40% from matrix generator
+    use_priority = random.random() < 0.6
+
+    if use_priority:
+        # Flatten priority pools, shuffle, find unused keyword
+        all_priority = []
+        for pool in priority_pools:
+            all_priority.extend(pool)
+        random.shuffle(all_priority)
+
+        for kw in all_priority:
+            kw_lower = kw.lower()
+            if not any(kw_lower in title for title in existing_titles):
+                return _build_topic_from_keyword(kw)
+
+    # Matrix combination: modifier + core + audience + geo
+    attempts = 0
+    while attempts < 50:
+        core = random.choice(CORE_WORDS)
+        modifier = random.choice(MODIFIERS)
+        audience = random.choice(AUDIENCE_WORDS)
+        geo = random.choice(GEO_WORDS)
+
+        # Combine: "fast personal loan for OFW philippines"
+        keyword = f"{modifier} {core} {audience} {geo}"
+
+        kw_lower = keyword.lower()
+        if not any(kw_lower in title for title in existing_titles):
+            return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
+
+        attempts += 1
+
+    # Fallback: random matrix combo regardless of duplicates
+    core = random.choice(CORE_WORDS)
+    modifier = random.choice(MODIFIERS)
+    audience = random.choice(AUDIENCE_WORDS)
+    geo = random.choice(GEO_WORDS)
+    keyword = f"{modifier} {core} {audience} {geo}"
+    return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
+
+
+def _build_topic_from_keyword(keyword, core=None, audience=None, geo=None):
+    """Build a complete topic dict from a keyword string."""
+    kw_lower = keyword.lower()
+
+    # Detect core word from keyword
+    if core is None:
+        core = "loan"  # default
+        for cw in sorted(CORE_WORDS, key=len, reverse=True):  # longest match first
+            if cw in kw_lower:
+                core = cw
+                break
+        # Check credit-specific keywords
+        if "credit score" in kw_lower or "CIC" in kw_lower or "credit history" in kw_lower:
+            core = "credit"
+        if " vs " in kw_lower or "comparison" in kw_lower:
+            core = "comparison"
+
+    # Detect audience
+    if audience is None:
+        for aw in AUDIENCE_WORDS:
+            if aw in kw_lower:
+                audience = aw
+                break
+
+    # Detect geo
+    if geo is None:
+        for gw in GEO_WORDS:
+            if gw in kw_lower:
+                geo = gw
+                break
+
+    # Build angle
+    angle_parts = []
+    if audience and audience in AUDIENCE_ANGLES:
+        angle_parts.append(AUDIENCE_ANGLES[audience])
+    else:
+        angle_parts.append("practical guide with real bank rates and step-by-step application tips")
+    if geo and geo != "philippines":
+        angle_parts.append(f"with local options available in {geo.title()}")
+
+    angle = " — ".join(angle_parts)
+
+    # Get data points (match to closest core word)
+    data_points = CATEGORY_DATA_POINTS.get(core, CATEGORY_DATA_POINTS["loan"])
+
+    # Get image query
+    img_query = IMG_QUERIES.get(core, "loan finance philippines")
+
+    # Get category
+    category = CORE_CATEGORIES.get(core, "Loans")
+
+    return {
+        "keyword": keyword,
+        "angle": angle,
+        "category": category,
+        "img_query": img_query,
+        "data_points": data_points,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -239,20 +360,8 @@ def get_existing_posts():
 
 
 def pick_topic(existing_titles):
-    """Pick a random topic that hasn't been covered recently."""
-    topics = load_topics()
-    random.shuffle(topics)
-
-    for topic in topics:
-        keyword_lower = topic["keyword"].lower()
-        if any(keyword_lower in title for title in existing_titles):
-            continue
-        return topic
-
-    # All topics covered - pick a random one with a fresh angle
-    topic = random.choice(topics)
-    topic["angle"] = f"latest updates and tips about {topic['keyword']} in 2026"
-    return topic
+    """Pick a topic from the keyword matrix, avoiding recent duplicates."""
+    return generate_topic(existing_titles)
 
 
 # ---------------------------------------------------------------------------
