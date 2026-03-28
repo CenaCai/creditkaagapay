@@ -27,132 +27,195 @@ PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 
 PEXELS_API = "https://api.pexels.com/v1"
 
+# Existing articles for internal linking
+EXISTING_ARTICLES = {
+    "credit score": "/the-ultimate-guide-to-credit-scores-in-the-philippines-2026/",
+    "CIC credit report": "/how-to-read-your-cic-credit-report-in-the-philippines-a-step-by-step-guide/",
+    "personal loan": "/personal-loan-philippines-best-options-smart-qualification/",
+    "credit card rewards": "/credit-card-rewards-philippines-maximize-your-perks/",
+    "credit score vs credit report": "/credit-score-vs-credit-report-in-the-philippines-whats-the-difference/",
+    "online lending scams": "/how-to-avoid-online-lending-scams-in-the-philippines-2026-complete-guide/",
+    "budgeting": "/cost-of-living-budgeting-why-its-the-top-priority-for-millennials-gen-z-living-paycheck-to-paycheck/",
+    "top credit cards": "/top-5-credit-cards-in-the-philippines-2025-lowest-rates-no-annual-fees-for-life-naffl/",
+    "online loan apps": "/deep-dive-into-the-philippines-top-online-loan-apps/",
+}
+
 
 # ---------------------------------------------------------------------------
-# Topics
+# Topics (with real data points for grounding)
 # ---------------------------------------------------------------------------
 def load_topics():
-    """Return the pool of SEO topics to write about."""
+    """Return the pool of SEO topics with real Philippine financial data."""
     return [
         {
-            "keyword": "credit score Philippines",
-            "angle": "how to check and improve your credit score in the Philippines",
-            "category": "Credit Education",
-            "img_query": "credit score finance Philippines",
-        },
-        {
-            "keyword": "CIC credit report",
-            "angle": "complete guide to getting your free CIC credit report",
-            "category": "Credit Education",
-            "img_query": "credit report document",
-        },
-        {
-            "keyword": "personal loan Philippines",
-            "angle": "best personal loan options and how to qualify",
-            "category": "Loans",
-            "img_query": "personal loan money Philippines",
-        },
-        {
             "keyword": "credit card application Philippines",
-            "angle": "tips for first-time credit card applicants in the Philippines",
+            "angle": "first-time applicant guide with actual bank requirements and approval tips",
             "category": "Credit Cards",
-            "img_query": "credit card application",
+            "img_query": "credit card application form",
+            "data_points": (
+                "BPI: min ₱15k/mo income, 21 yrs old. BDO: min ₱10k/mo (Visa Classic). "
+                "Metrobank: min ₱15k/mo. UnionBank: min ₱12k/mo. Processing: 7-14 days. "
+                "Annual fees: ₱1,500-₱5,000 (often waived 1st year). Interest: 2-3.5%/month."
+            ),
         },
         {
-            "keyword": "improve credit score fast",
-            "angle": "actionable steps to improve your credit score quickly",
+            "keyword": "improve credit score fast Philippines",
+            "angle": "month-by-month plan with real impact numbers on your CIC score",
             "category": "Credit Education",
-            "img_query": "financial growth chart",
+            "img_query": "financial growth chart upward",
+            "data_points": (
+                "CIC score range: 300-850. >700 = good. On-time payment = ~35% of score. "
+                "Utilization below 30% boosts score 20-40 points in 2-3 months. "
+                "Each new account inquiry drops score ~15 points. "
+                "Dispute errors at CIC: free, takes 30 days. Negative records: fall off after 5 years."
+            ),
         },
         {
             "keyword": "debt consolidation Philippines",
-            "angle": "how to consolidate debt and manage payments",
+            "angle": "real bank programs with rates and a savings calculation example",
             "category": "Financial Planning",
-            "img_query": "debt management finance",
+            "img_query": "debt management planning documents",
+            "data_points": (
+                "CIMB balance transfer: 0% for 3 months then 1.49%/mo. "
+                "BPI: 0.59%/mo for 12-36 months. Metrobank: 0.79%/mo. "
+                "Average CC interest without consolidation: 2-3.5%/mo (24-42% APR). "
+                "₱50k debt at 3%/mo vs 0.79%/mo saves ₱13,260/year."
+            ),
         },
         {
-            "keyword": "salary loan Philippines",
-            "angle": "comparing salary loan providers and interest rates",
+            "keyword": "salary loan Philippines 2026",
+            "angle": "SSS vs Pag-IBIG vs bank salary loans - which is cheapest?",
             "category": "Loans",
-            "img_query": "salary paycheck office",
+            "img_query": "salary paycheck office desk",
+            "data_points": (
+                "SSS: up to ₱52k, 10%/yr, 24 payments. "
+                "Pag-IBIG MPL: up to 80% of savings, 10.5%/yr, max 24 months. "
+                "BPI: ₱20k-₱2M, 1.2-1.6%/mo. CIMB: ₱30k-₱1M, from 1.19%/mo."
+            ),
         },
         {
             "keyword": "financial literacy Philippines",
-            "angle": "essential financial literacy tips for Filipino professionals",
+            "angle": "the 5 money mistakes most Filipinos make (with BSP survey data)",
             "category": "Financial Planning",
-            "img_query": "financial education learning",
+            "img_query": "financial planning notebook money",
+            "data_points": (
+                "BSP 2023: only 2% of adult Filipinos are financially literate on all 3 dimensions. "
+                "53% have no emergency fund. Median household income: ~₱22k/month (PSA 2023). "
+                "Ideal emergency fund: 3-6 months = ₱66k-₱132k for median household."
+            ),
         },
         {
             "keyword": "home loan Philippines 2026",
-            "angle": "guide to home loans, requirements, and best rates",
+            "angle": "actual rates from top 5 banks plus a monthly payment example",
             "category": "Loans",
-            "img_query": "house keys home buying",
+            "img_query": "house keys home buying Philippines",
+            "data_points": (
+                "BDO: 6.5% fixed 1yr, 7.5% 3yr. BPI: 6.25% 1yr, 7.0% 3yr. "
+                "Metrobank: 6.88% 1yr. Pag-IBIG: 3% (<₱750k) or 6.5% (>₱750k), up to ₱6M, 30yr. "
+                "Down payment: 10-20%. Example: ₱3M at 6.5% for 20yr = ₱22,363/mo."
+            ),
         },
         {
-            "keyword": "SSS loan application",
-            "angle": "step-by-step guide to applying for SSS loans online",
+            "keyword": "SSS loan application online",
+            "angle": "exact step-by-step process at my.sss.gov.ph with requirements",
             "category": "Government Services",
-            "img_query": "government services application form",
+            "img_query": "online application form government",
+            "data_points": (
+                "Need: 36 contributions total, 6 within last 12 months. "
+                "Max: avg monthly salary credit × 24 (cap ₱52,000). Interest: 10%/yr. "
+                "Apply at my.sss.gov.ph. Processing: 3-5 business days. Disbursement via PESONet."
+            ),
         },
         {
-            "keyword": "Pag-IBIG housing loan",
-            "angle": "how to apply for Pag-IBIG housing loan and requirements",
+            "keyword": "Pag-IBIG housing loan 2026",
+            "angle": "complete requirements checklist and monthly payment computation",
             "category": "Government Services",
-            "img_query": "housing loan home family",
+            "img_query": "housing loan documents family home",
+            "data_points": (
+                "Need: 24 monthly contributions. Loan: up to ₱6M regular, ₱10M affordable. "
+                "Rate: 3%/yr (≤₱750k), 6.5%/yr (>₱750k). Max term: 30 years. "
+                "₱2M at 6.5% for 30yr = ₱12,639/mo. Processing: 15-20 working days."
+            ),
         },
         {
-            "keyword": "online lending apps Philippines",
-            "angle": "safe and SEC-registered online lending apps review",
+            "keyword": "online lending apps Philippines safe",
+            "angle": "SEC-registered vs illegal - a checklist to protect yourself",
             "category": "Loans",
-            "img_query": "mobile app finance smartphone",
+            "img_query": "mobile phone lending app",
+            "data_points": (
+                "SEC-registered (2026): Tonik, Maya Credit, CIMB, Tala, Cashalo, Lendly. "
+                "Red flags: requires contacts/gallery access, interest >15%/month, no SEC number. "
+                "BSP limit: max 6%/month for digital lenders. SEC blocked 200+ apps in 2025."
+            ),
         },
         {
             "keyword": "build credit history Philippines",
-            "angle": "how to build credit history from scratch",
+            "angle": "zero-to-700 roadmap for fresh graduates (month by month)",
             "category": "Credit Education",
-            "img_query": "building blocks growth",
+            "img_query": "young professional career growth",
+            "data_points": (
+                "Timeline: 6 months for CIC record, 12-18 months for 650+. "
+                "Starters: secured CC (BPI/BDO ₱10k deposit), postpaid plan (Globe/Smart). "
+                "CIMB credit builder: ₱30k min. After 12 months: eligible for unsecured cards."
+            ),
         },
         {
-            "keyword": "credit score meaning",
-            "angle": "understanding what your credit score number means",
-            "category": "Credit Education",
-            "img_query": "numbers score data analytics",
-        },
-        {
-            "keyword": "emergency fund Philippines",
-            "angle": "how to build an emergency fund on a Filipino salary",
+            "keyword": "emergency fund Philippines 2026",
+            "angle": "best high-yield accounts to park your fund (rate comparison)",
             "category": "Financial Planning",
-            "img_query": "savings piggy bank money",
+            "img_query": "savings piggy bank money coins",
+            "data_points": (
+                "Tonik: up to 5.5%/yr. Maya: 3.5%/yr. SeaBank: 5%/yr (promo). "
+                "CIMB UpSave: 2.6%/yr. Traditional banks: 0.1-0.5%/yr. "
+                "Inflation 2025: ~3.5%. Savings below 3.5%/yr lose purchasing power."
+            ),
         },
         {
-            "keyword": "car loan Philippines",
-            "angle": "comparing car loan options and how to get approved",
+            "keyword": "car loan Philippines 2026",
+            "angle": "bank vs dealer financing - which actually saves you money?",
             "category": "Loans",
-            "img_query": "car purchase keys auto",
+            "img_query": "car purchase dealership keys",
+            "data_points": (
+                "Banks: BPI 6-8%/yr, BDO 7-10%/yr, EastWest 8-12%/yr. "
+                "Dealer in-house: 12-18%/yr hidden as 'add-on'. "
+                "₱800k loan 5yr: bank 7% = ₱15,842/mo, dealer 15% add-on = ₱19,333/mo. "
+                "Savings choosing bank: ₱209,460 over 5 years. Down payment: 20-30%."
+            ),
         },
         {
-            "keyword": "GCash credit features",
-            "angle": "using GCash for credit building and loan access",
+            "keyword": "GCash credit features 2026",
+            "angle": "GCredit, GGives, GLoan - limits, rates, and CIC impact",
             "category": "Fintech",
-            "img_query": "mobile payment digital wallet",
-        },
-        {
-            "keyword": "credit card rewards Philippines",
-            "angle": "maximizing credit card rewards and cashback",
-            "category": "Credit Cards",
-            "img_query": "rewards cashback shopping",
+            "img_query": "mobile payment digital wallet smartphone",
+            "data_points": (
+                "GCredit: ₱1k-₱30k limit, 5% fee. Reports to CIC since 2023. "
+                "GGives: 3-12 months installment, 3.49% service fee. "
+                "GLoan (via CIMB/Fuse): ₱5k-₱25k, 3.99-5.99%/mo, 6-12 months. "
+                "Late payment: 5% penalty + negative CIC record."
+            ),
         },
         {
             "keyword": "loan calculator Philippines",
-            "angle": "how to use loan calculators to plan your borrowing",
+            "angle": "how to calculate the TRUE cost of a loan (EIR vs add-on rate explained)",
             "category": "Financial Planning",
-            "img_query": "calculator finance planning",
+            "img_query": "calculator finance money planning",
+            "data_points": (
+                "Add-on 1.5%/mo on ₱100k for 12mo: total interest ₱18k, EIR = 32.4%/yr. "
+                "Diminishing 1.5%/mo: total interest ₱9,750, EIR = 18%/yr. "
+                "BSP requires EIR disclosure since 2019. Processing fees (1-3%) add to cost."
+            ),
         },
         {
             "keyword": "bad credit loan Philippines",
-            "angle": "loan options available even with a low credit score",
+            "angle": "realistic options that won't trap you deeper (and what to avoid)",
             "category": "Loans",
-            "img_query": "financial difficulty help",
+            "img_query": "financial difficulty stress help",
+            "data_points": (
+                "Options: SSS salary loan (no credit check), Pag-IBIG MPL, cooperative loans, pawnshop. "
+                "Avoid: 5-6 lending (20%/month), unregistered apps. "
+                "Rebuild: secured CC → 6 months on-time → better options. "
+                "Banks have hardship programs: lower rate + extended term on request."
+            ),
         },
     ]
 
@@ -321,10 +384,66 @@ def fetch_and_upload_images(query, keyword, count=3):
 
 
 # ---------------------------------------------------------------------------
-# Article generation (Gemini)
+# Article generation (Gemini) & post-processing
 # ---------------------------------------------------------------------------
+def build_internal_links_ref(current_keyword):
+    """Build internal links string for prompt, excluding current topic."""
+    links = []
+    for topic, path in EXISTING_ARTICLES.items():
+        if current_keyword.lower() not in topic.lower():
+            links.append(f'  - "{topic}": {WP_SITE}{path}')
+    return "\n".join(links[:6])  # Max 6 links to keep prompt focused
+
+
+def replace_internal_link_placeholders(html):
+    """Replace [INTERNAL_LINK: topic] placeholders with real <a> tags."""
+    def replacer(match):
+        topic_hint = match.group(1).strip().lower()
+        for topic, path in EXISTING_ARTICLES.items():
+            if topic_hint in topic.lower() or topic.lower() in topic_hint:
+                url = f"{WP_SITE}{path}"
+                return f'<a href="{url}">{match.group(1).strip()}</a>'
+        # No match found - just return the text without link
+        return match.group(1).strip()
+
+    return re.sub(r"\[INTERNAL_LINK:\s*([^\]]+)\]", replacer, html)
+
+
+def generate_faq_schema(article_content):
+    """Extract FAQ section from content and generate JSON-LD schema."""
+    # Look for Q&A patterns in the content
+    faq_items = []
+    # Match <h3> followed by <p> patterns that look like Q&A
+    pattern = r"<h3[^>]*>([^<]+\?)</h3>\s*<p>([^<]+(?:<[^/][^>]*>[^<]*</[^>]*>)*[^<]*)</p>"
+    matches = re.findall(pattern, article_content, re.DOTALL)
+    for question, answer in matches[:5]:
+        clean_answer = re.sub(r"<[^>]+>", "", answer).strip()
+        if len(clean_answer) > 30:
+            faq_items.append({"question": question.strip(), "answer": clean_answer})
+
+    if not faq_items:
+        return ""
+
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": item["question"],
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": item["answer"],
+                },
+            }
+            for item in faq_items
+        ],
+    }
+    return f'\n<script type="application/ld+json">\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n</script>'
+
+
 def generate_article(topic, image_data=None):
-    """Use Gemini REST API to generate an SEO-optimized, highly readable blog article."""
+    """Use Gemini to generate a data-grounded, human-readable blog article."""
     GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     # Build image placement instructions
@@ -333,79 +452,87 @@ def generate_article(topic, image_data=None):
         img_tags = []
         for i, img in enumerate(image_data):
             img_tags.append(
-                f'  Image {i + 1}: <img src="{img["url"]}" alt="{img["alt"]}" '
+                f'  Image {i + 1}: <figure><img src="{img["url"]}" alt="{img["alt"]}" '
                 f'class="wp-image-{img["id"]}" style="width:100%;height:auto;" />'
+                f'<figcaption>Photo by {img["photographer"]} on Pexels</figcaption></figure>'
             )
         img_list = "\n".join(img_tags)
         img_instructions = f"""
-
-**Images available for the article (INSERT these naturally within the article body):**
+IMAGES (insert naturally between sections):
 {img_list}
+Place the first image after the opening paragraph, distribute the rest evenly."""
 
-IMPORTANT image placement rules:
-- Insert the FIRST image right after the opening paragraph (before the first H2)
-- Distribute remaining images evenly throughout the article between sections
-- Wrap each image in a <figure> tag with a <figcaption> that includes photographer credit
-- Example: <figure><img src="..." alt="..." style="width:100%;height:auto;" /><figcaption>Photo by [Photographer] on Pexels</figcaption></figure>
-"""
+    # Build internal links reference
+    internal_links = build_internal_links_ref(topic["keyword"])
 
-    prompt = f"""You are an expert content writer creating an article for Credit Kaagapay, a fintech app in the Philippines that helps users check their credit scores, access CIC credit reports, and find AI-powered loan recommendations.
+    # Get data points
+    data_points = topic.get("data_points", "")
 
-**Target Keyword:** {topic['keyword']}
-**Angle:** {topic['angle']}
-**Category:** {topic['category']}
+    prompt = f"""You are a Filipino personal finance blogger writing for Credit Kaagapay (a free credit score & loan finder app). Write like a real person, not an AI.
+
+TOPIC: {topic['keyword']}
+ANGLE: {topic['angle']}
+CATEGORY: {topic['category']}
+
+REAL DATA TO USE (weave these into the article naturally):
+{data_points}
+
+EXISTING ARTICLES FOR INTERNAL LINKS (link to 2-3 of these where relevant):
+{internal_links}
 {img_instructions}
 
-Write a blog article following these STRICT readability and quality guidelines:
+=== WRITING STYLE (THIS IS THE MOST IMPORTANT PART) ===
 
-## READABILITY RULES (MOST IMPORTANT):
-1. **Opening hook**: Start with a relatable scenario, surprising statistic, or direct question that connects with Filipino readers. NO generic openings.
-2. **Short paragraphs**: Maximum 3 sentences per paragraph. White space is your friend.
-3. **Conversational tone**: Write like you're explaining to a smart friend over coffee. Use "you" and "your" frequently. Avoid stiff, formal language.
-4. **Concrete examples**: Every key point MUST include a specific, real-world example relevant to Filipinos (e.g., actual bank names, peso amounts, specific steps).
-5. **Scannable structure**: Use H2 for main sections, H3 for subsections. Add bullet points or numbered lists in EVERY section.
-6. **Transition sentences**: Every section must flow naturally into the next. Use bridge sentences.
-7. **Filipino context**: Reference local institutions (BDO, BPI, Metrobank, SSS, Pag-IBIG), peso amounts, and Filipino financial habits.
+VOICE: Write like a knowledgeable friend who works in banking. Casual but credible. Use "you" constantly. Sprinkle in 1-2 Filipino words naturally (e.g., "kumusta", "pera", "sweldo").
 
-## CONTENT RULES:
-- Title: Catchy, includes keyword, under 60 characters
-- Length: 1200-1800 words of SUBSTANTIVE content
-- Keyword usage: 5-8 times, placed naturally
-- Meta description: Under 155 characters, compelling, includes keyword
-- Include a "Key Takeaways" or "Quick Summary" box near the top (use a styled div)
-- End with a clear call-to-action mentioning Credit Kaagapay app
-- Include at least one comparison table or pros/cons list using HTML tables
-- Add internal linking suggestions as [INTERNAL_LINK: topic] placeholders
+BANNED OPENINGS (if you start with any of these, the article fails):
+- "In the bustling..." / "In today's..." / "In the dynamic..."
+- "As we all know..." / "It's no secret that..."
+- "Whether you're a..." / "Are you looking for..."
+- Any sentence that could describe any country (not specific to Philippines)
 
-## FORMATTING RULES:
-- Use <strong> for emphasis on key terms (2-3 per section max)
-- Use <blockquote> for important tips or warnings
-- Use HTML tables with proper <thead> and <tbody> for comparisons
-- Style the key takeaways box: <div style="background:#f0f7ff;border-left:4px solid #2563eb;padding:20px;margin:20px 0;border-radius:8px;">
+GOOD OPENINGS (pick one style):
+- A specific peso amount scenario: "Last month, my friend applied for a ₱50,000 loan at BPI and got rejected. Here's what she did wrong."
+- A surprising data point: "Only 2% of Filipino adults are financially literate, according to BSP. That's not a typo."
+- A direct challenge: "You're probably paying way more interest than you need to. Let me show you the math."
 
-## WHAT TO AVOID:
-- NO filler phrases like "In today's world" or "As we all know"
-- NO walls of text without formatting
-- NO vague advice - be specific with numbers, steps, names
-- NO keyword stuffing - it should read naturally
-- NO overly promotional tone for Credit Kaagapay
+STRUCTURE:
+1. Hook paragraph (2-3 sentences, specific scenario or data)
+2. Key Takeaways box (styled div with 4-5 bullet points of the most useful info)
+3. Main content in 3-4 sections with H2 headings
+4. At least ONE comparison table (HTML <table>) with real numbers
+5. FAQ section: 3 questions as H3 with "?" - answer in the next <p>
+6. CTA paragraph mentioning Credit Kaagapay app
 
-**Output format (JSON):**
+PARAGRAPH RULES:
+- Max 2-3 sentences per paragraph
+- Every paragraph must contain either: a number, a bank name, a peso amount, or an action step
+- If a paragraph is just "filler commentary" with no concrete info, delete it
+
+FORMATTING:
+- <h2> for main sections, <h3> for subsections and FAQ questions
+- <table> with <thead>/<tbody> for comparisons (include ₱ amounts)
+- <blockquote> for pro tips (max 2 per article)
+- <strong> sparingly (max 2 per section)
+- Key Takeaways: <div style="background:#f0f7ff;border-left:4px solid #2563eb;padding:20px;margin:20px 0;border-radius:8px;">
+- Internal links: use <a href="URL">anchor text</a> directly
+
+LENGTH: 1200-1500 words. Every word must earn its place.
+
+OUTPUT (valid JSON only, no markdown fences):
 {{
-    "title": "Article Title Here",
-    "meta_description": "Compelling meta description here",
-    "excerpt": "A 2-3 sentence summary for the post excerpt",
-    "content": "<full HTML content here>",
+    "title": "under 60 chars, includes keyword, not clickbait",
+    "meta_description": "under 155 chars, includes keyword, compelling",
+    "excerpt": "2 sentences summarizing the key value",
+    "content": "full HTML content",
     "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
     "focus_keyword": "{topic['keyword']}"
-}}
-
-IMPORTANT: Return ONLY valid JSON. No markdown code fences or extra text."""
+}}"""
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
-            "temperature": 0.85,
+            "temperature": 0.9,
             "maxOutputTokens": 8192,
         },
     }
@@ -433,7 +560,22 @@ IMPORTANT: Return ONLY valid JSON. No markdown code fences or extra text."""
         text = re.sub(r"^```(?:json)?\n?", "", text)
         text = re.sub(r"\n?```$", "", text)
 
-    return json.loads(text)
+    article = json.loads(text)
+
+    # Post-processing
+    content = article.get("content", "")
+
+    # Replace any remaining [INTERNAL_LINK:] placeholders
+    content = replace_internal_link_placeholders(content)
+
+    # Generate and append FAQ schema
+    faq_schema = generate_faq_schema(content)
+    if faq_schema:
+        content += faq_schema
+        print("  FAQ Schema generated")
+
+    article["content"] = content
+    return article
 
 
 # ---------------------------------------------------------------------------
