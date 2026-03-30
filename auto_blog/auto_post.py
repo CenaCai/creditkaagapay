@@ -27,6 +27,10 @@ PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 
 PEXELS_API = "https://api.pexels.com/v1"
 
+# Author info (E-E-A-T)
+AUTHOR_NAME = "Tan, Erika Trizia"
+AUTHOR_ROLE = "Marketing Manager at Credit Kaagapay"
+
 # Existing articles for internal linking
 EXISTING_ARTICLES = {
     "credit score": "/the-ultimate-guide-to-credit-scores-in-the-philippines-2026/",
@@ -558,9 +562,14 @@ def generate_article_schema(title, excerpt, keyword, post_url=None, image_url=No
         "headline": title,
         "description": excerpt,
         "author": {
-            "@type": "Organization",
-            "name": "Credit Kaagapay",
-            "url": WP_SITE,
+            "@type": "Person",
+            "name": AUTHOR_NAME,
+            "jobTitle": AUTHOR_ROLE,
+            "worksFor": {
+                "@type": "Organization",
+                "name": "Credit Kaagapay",
+                "url": WP_SITE,
+            },
         },
         "publisher": {
             "@type": "Organization",
@@ -655,17 +664,18 @@ IMPORTANT: The opening paragraph MUST contain the exact keyword "{topic['keyword
 
 STRUCTURE:
 1. Hook paragraph (2-3 sentences, MUST include exact keyword, specific scenario or data)
-2. Key Takeaways box (styled div with "Updated {current_date}" badge + 4-5 bullet points)
-3. Main content in 3-4 sections with H2 headings (use keyword variants in headings)
-4. At least ONE comparison table (HTML <table>) with real numbers from named institutions
-5. FAQ section: 3 questions as H3 with "?" - answer in the next <p>
-6. STRONG CTA section with this exact HTML:
+2. Author byline right after the hook: <p style="color:#6b7280;font-size:0.9em;margin:8px 0 16px;">By {AUTHOR_NAME}, {AUTHOR_ROLE}</p>
+3. Key Takeaways box (styled div with "Updated {current_date}" badge + 4-5 bullet points)
+4. Main content in 3-4 sections with H2 headings (use keyword variants in headings)
+5. At least ONE comparison table (HTML <table>) with real numbers from named institutions
+6. FAQ section: 3 questions as H3 with "?" - answer in the next <p>
+7. STRONG CTA section with this exact HTML:
    <div style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;padding:24px;border-radius:12px;margin:24px 0;text-align:center;">
      <h3 style="color:#fff;margin:0 0 12px;">Before You Apply — Check Your Credit Score for FREE</h3>
      <p style="margin:0 0 16px;">Don't get rejected. Know your CIC credit score first with Credit Kaagapay — 100% free, no hidden fees.</p>
      <a href="https://www.creditkaagapay.com/" style="background:#fff;color:#2563eb;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">Check My Credit Score Now</a>
    </div>
-7. SEC compliance disclaimer (see E-E-A-T section above)
+8. SEC compliance disclaimer (see E-E-A-T section above)
 
 PARAGRAPH RULES:
 - Max 2-3 sentences per paragraph
