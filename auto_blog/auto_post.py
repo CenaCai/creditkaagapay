@@ -471,7 +471,7 @@ def fetch_and_upload_images(query, keyword, count=3):
         # Use medium size (good quality, reasonable file size)
         photo_url = photo.get("src", {}).get("large", photo.get("src", {}).get("original", ""))
         photographer = photo.get("photographer", "Pexels")
-        alt_text = f"{keyword} - Photo by {photographer} on Pexels"
+        alt_text = f"{keyword} in the Philippines - Photo by {photographer} on Pexels"
 
         print(f"  Downloading image {i + 1}/{len(photos)} from Pexels...")
         img_bytes, content_type = download_and_strip_image(photo_url)
@@ -520,9 +520,7 @@ def replace_internal_link_placeholders(html):
 
 def generate_faq_schema(article_content):
     """Extract FAQ section from content and generate JSON-LD schema."""
-    # Look for Q&A patterns in the content
     faq_items = []
-    # Match <h3> followed by <p> patterns that look like Q&A
     pattern = r"<h3[^>]*>([^<]+\?)</h3>\s*<p>([^<]+(?:<[^/][^>]*>[^<]*</[^>]*>)*[^<]*)</p>"
     matches = re.findall(pattern, article_content, re.DOTALL)
     for question, answer in matches[:5]:
@@ -548,6 +546,38 @@ def generate_faq_schema(article_content):
             for item in faq_items
         ],
     }
+    return f'\n<script type="application/ld+json">\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n</script>'
+
+
+def generate_article_schema(title, excerpt, keyword, post_url=None, image_url=None):
+    """Generate Article JSON-LD schema for rich snippets."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": title,
+        "description": excerpt,
+        "author": {
+            "@type": "Organization",
+            "name": "Credit Kaagapay",
+            "url": WP_SITE,
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Credit Kaagapay",
+            "logo": {
+                "@type": "ImageObject",
+                "url": f"{WP_SITE}/wp-content/uploads/credit-kaagapay-logo.png",
+            },
+        },
+        "datePublished": now,
+        "dateModified": now,
+        "keywords": keyword,
+    }
+    if image_url:
+        schema["image"] = image_url
+    if post_url:
+        schema["mainEntityOfPage"] = {"@type": "WebPage", "@id": post_url}
     return f'\n<script type="application/ld+json">\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n</script>'
 
 
@@ -577,11 +607,15 @@ Place the first image after the opening paragraph, distribute the rest evenly.""
     # Get data points
     data_points = topic.get("data_points", "")
 
+    # Get current date for freshness signal
+    current_date = datetime.now(timezone.utc).strftime("%B %Y")
+
     prompt = f"""You are a Filipino personal finance blogger writing for Credit Kaagapay (a free credit score & loan finder app). Write like a real person, not an AI.
 
 TOPIC: {topic['keyword']}
 ANGLE: {topic['angle']}
 CATEGORY: {topic['category']}
+DATE: {current_date}
 
 REAL DATA TO USE (weave these into the article naturally):
 {data_points}
@@ -590,7 +624,20 @@ EXISTING ARTICLES FOR INTERNAL LINKS (link to 2-3 of these where relevant):
 {internal_links}
 {img_instructions}
 
-=== WRITING STYLE (THIS IS THE MOST IMPORTANT PART) ===
+=== SEO REQUIREMENTS (CRITICAL FOR RANKING) ===
+
+KEYWORD DENSITY:
+- The EXACT phrase "{topic['keyword']}" MUST appear in the first 100 words / opening paragraph
+- Use the exact keyword 3-5 times naturally throughout the article
+- Include 3-4 LSI (related) keywords naturally. Examples for this topic: generate variations like "[keyword] near me", "[keyword] requirements", "[keyword] rates 2026", "best [keyword] options"
+- Use the keyword or a close variant in at least 2 H2 headings
+
+E-E-A-T (CRITICAL — this is YMYL financial content):
+- Add "Updated {current_date}" near the top (e.g., inside the Key Takeaways box or right after the title)
+- Every rate, amount, or requirement MUST reference the source (bank name, BSP, SSS, Pag-IBIG, SEC)
+- Include a compliance notice at the end: "<p><em>Disclaimer: Always verify loan terms directly with the lender. Check that any lending company is registered with the <a href='https://www.sec.gov.ph'>SEC</a> before applying. Rates and requirements may change — this guide was last updated {current_date}.</em></p>"
+
+=== WRITING STYLE ===
 
 VOICE: Write like a knowledgeable friend who works in banking. Casual but credible. Use "you" constantly. Sprinkle in 1-2 Filipino words naturally (e.g., "kumusta", "pera", "sweldo").
 
@@ -604,14 +651,21 @@ GOOD OPENINGS (pick one style):
 - A specific peso amount scenario: "Last month, my friend applied for a ₱50,000 loan at BPI and got rejected. Here's what she did wrong."
 - A surprising data point: "Only 2% of Filipino adults are financially literate, according to BSP. That's not a typo."
 - A direct challenge: "You're probably paying way more interest than you need to. Let me show you the math."
+IMPORTANT: The opening paragraph MUST contain the exact keyword "{topic['keyword']}".
 
 STRUCTURE:
-1. Hook paragraph (2-3 sentences, specific scenario or data)
-2. Key Takeaways box (styled div with 4-5 bullet points of the most useful info)
-3. Main content in 3-4 sections with H2 headings
-4. At least ONE comparison table (HTML <table>) with real numbers
+1. Hook paragraph (2-3 sentences, MUST include exact keyword, specific scenario or data)
+2. Key Takeaways box (styled div with "Updated {current_date}" badge + 4-5 bullet points)
+3. Main content in 3-4 sections with H2 headings (use keyword variants in headings)
+4. At least ONE comparison table (HTML <table>) with real numbers from named institutions
 5. FAQ section: 3 questions as H3 with "?" - answer in the next <p>
-6. CTA paragraph mentioning Credit Kaagapay app
+6. STRONG CTA section with this exact HTML:
+   <div style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;padding:24px;border-radius:12px;margin:24px 0;text-align:center;">
+     <h3 style="color:#fff;margin:0 0 12px;">Before You Apply — Check Your Credit Score for FREE</h3>
+     <p style="margin:0 0 16px;">Don't get rejected. Know your CIC credit score first with Credit Kaagapay — 100% free, no hidden fees.</p>
+     <a href="https://www.creditkaagapay.com/" style="background:#fff;color:#2563eb;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">Check My Credit Score Now</a>
+   </div>
+7. SEC compliance disclaimer (see E-E-A-T section above)
 
 PARAGRAPH RULES:
 - Max 2-3 sentences per paragraph
@@ -623,10 +677,10 @@ FORMATTING:
 - <table> with <thead>/<tbody> for comparisons (include ₱ amounts)
 - <blockquote> for pro tips (max 2 per article)
 - <strong> sparingly (max 2 per section)
-- Key Takeaways: <div style="background:#f0f7ff;border-left:4px solid #2563eb;padding:20px;margin:20px 0;border-radius:8px;">
+- Key Takeaways: <div style="background:#f0f7ff;border-left:4px solid #2563eb;padding:20px;margin:20px 0;border-radius:8px;"><p style="margin:0 0 8px;font-size:0.85em;color:#6b7280;">Updated {current_date}</p><h3 style="margin:0 0 12px;">Key Takeaways</h3>...bullet points...</div>
 - Internal links: use <a href="URL">anchor text</a> directly
 
-LENGTH: 1200-1500 words. Every word must earn its place.
+LENGTH: 1500-1800 words. Every word must earn its place.
 
 OUTPUT (valid JSON only, no markdown fences):
 {{
@@ -642,7 +696,7 @@ OUTPUT (valid JSON only, no markdown fences):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.9,
-            "maxOutputTokens": 8192,
+            "maxOutputTokens": 12000,
         },
     }
 
@@ -682,6 +736,17 @@ OUTPUT (valid JSON only, no markdown fences):
     if faq_schema:
         content += faq_schema
         print("  FAQ Schema generated")
+
+    # Generate and append Article schema
+    featured_url = image_data[0]["url"] if image_data else None
+    article_schema = generate_article_schema(
+        title=article.get("title", ""),
+        excerpt=article.get("excerpt", ""),
+        keyword=topic["keyword"],
+        image_url=featured_url,
+    )
+    content += article_schema
+    print("  Article Schema generated")
 
     article["content"] = content
     return article
