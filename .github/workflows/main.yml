@@ -2,9 +2,8 @@ name: GSC Weekly Report
 
 on:
   schedule:
-    # æ¯å¨ä¸ UTC 08:00 (åäº¬æ¶é´ 16:00) èªå¨è¿è¡
     - cron: '0 8 * * 1'
-  workflow_dispatch:  # åè®¸æå¨è§¦å
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
