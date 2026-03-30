@@ -2,9 +2,9 @@ name: GSC Weekly Report
 
 on:
   schedule:
-    # 每周一 UTC 08:00 (北京时间 16:00) 自动运行
+    # æ¯å¨ä¸ UTC 08:00 (åäº¬æ¶é´ 16:00) èªå¨è¿è¡
     - cron: '0 8 * * 1'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:  # åè®¸æå¨è§¦å
 permissions:
   contents: write
 jobs:
@@ -37,5 +37,6 @@ jobs:
             echo "No new report to commit"
           else
             git commit -m "Weekly SEO report $(date +%Y-%m-%d)"
+            git pull --rebase origin main
             git push
           fi
