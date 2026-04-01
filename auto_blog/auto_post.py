@@ -592,7 +592,6 @@ def generate_article_schema(title, excerpt, keyword, post_url=None, image_url=No
 
 def generate_article(topic, image_data=None):
     """Use Gemini to generate a data-grounded, human-readable blog article."""
-    GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     # Build image placement instructions
     img_instructions = ""
@@ -710,20 +709,38 @@ OUTPUT (valid JSON only, no markdown fences):
         },
     }
 
-    # Retry up to 3 times with backoff
-    for attempt in range(3):
-        resp = requests.post(GEMINI_URL, json=payload, timeout=120)
-        if resp.status_code == 200:
+      # Model fallback: try each model in order until one works
+    GEMINI_MODELS = [
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+    ]
+    resp = None
+    for model in GEMINI_MODELS:
+        model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        print(f"  Trying model: {model}")
+        for attempt in range(3):
+            resp = requests.post(model_url, json=payload, timeout=120)
+            if resp.status_code == 200:
+                print(f"  ✓ Success with {model}")
+                break
+            elif resp.status_code == 429:
+                wait = 30 * (attempt + 1)
+                print(f"  Rate limited on {model}, waiting {wait}s (attempt {attempt + 1}/3)...")
+                time.sleep(wait)
+            elif resp.status_code in (503, 500, 404):
+                print(f"  {model} unavailable ({resp.status_code}): {resp.text[:200]}")
+                break  # Try next model immediately
+            else:
+                print(f"  Gemini API error {resp.status_code}: {resp.text[:300]}")
+                if attempt == 2:
+                    break
+                time.sleep(10)
+        if resp and resp.status_code == 200:
             break
-        elif resp.status_code == 429:
-            wait = 30 * (attempt + 1)
-            print(f"  Rate limited, waiting {wait}s (attempt {attempt + 1}/3)...")
-            time.sleep(wait)
-        else:
-            print(f"  Gemini API error {resp.status_code}: {resp.text[:300]}")
-            if attempt == 2:
-                sys.exit(1)
-            time.sleep(10)
+    if not resp or resp.status_code != 200:
+        print(f"  All Gemini models failed. Last error: {resp.status_code if resp else 'no response'}")
+        sys.exit(1)
 
     data = resp.json()
     text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
