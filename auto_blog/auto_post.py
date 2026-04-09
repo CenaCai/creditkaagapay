@@ -52,6 +52,7 @@ EXISTING_ARTICLES = {
 CORE_WORDS = [
     "loan", "cash loan", "online loan", "quick loan", "fast loan",
     "personal loan", "credit loan", "money loan", "salary loan", "emergency loan",
+    "CIC credit report", "loan calculator", "online loan app", "bad credit loan",
 ]
 
 MODIFIERS = [
@@ -75,6 +76,8 @@ HIGH_TRAFFIC_KEYWORDS = [
     "online loan philippines", "fast loan philippines", "cash loan philippines",
     "personal loan philippines", "loan app philippines", "quick cash loan",
     "instant loan approval", "emergency loan philippines",
+    "CIC credit report philippines", "loan calculator philippines",
+    "best online loan app philippines", "bad credit loan philippines",
 ]
 
 HIGH_CONVERSION_KEYWORDS = [
@@ -183,6 +186,35 @@ CATEGORY_DATA_POINTS = {
         "GCash GLoan: 3.99-5.99%/mo. Maya Credit: 3.5% flat fee. "
         "Add-on rate 1.5%/mo = EIR 32.4%/yr. Diminishing 1.5%/mo = EIR 18%/yr."
     ),
+    "CIC credit report": (
+        "CIC (Credit Information Corporation) collects data from all BSP-supervised banks and lenders. "
+        "CIC score range: 300-850. Score >700 = good credit. Free report via creditinfo.gov.ph. "
+        "Report includes: payment history (35%), credit utilization (30%), credit age (15%), new inquiries (10%), mix (10%). "
+        "Dispute errors for free at CIC — takes 30 days. Negative records removed after 5 years. "
+        "BPI, BDO, Metrobank, CIMB, Tonik all report to CIC monthly."
+    ),
+    "loan calculator": (
+        "Add-on rate vs diminishing balance: 1.5%/mo add-on = ~32.4% EIR; 1.5%/mo diminishing = ~18% EIR. "
+        "BPI personal loan: ₱50k at 1.2%/mo for 12 months = ₱4,633/mo total payment. "
+        "CIMB: ₱50k at 1.19%/mo for 24 months = ₱2,595/mo. "
+        "SSS salary loan: ₱20k at 10%/yr for 24 months = ₱920/mo. "
+        "Rule of thumb: monthly payment should not exceed 30% of net monthly income."
+    ),
+    "online loan app": (
+        "SEC-registered apps (2026): Tonik, Maya, CIMB, Tala, Cashalo, Lendly, UnionDigital. "
+        "Tonik Quick Loan: ₱5k-₱50k, 1.59%/mo, 1-hour approval. "
+        "Maya Credit: ₱2k-₱30k, 3.5% flat fee, 30-min approval. "
+        "GCash GLoan: ₱5k-₱25k, 3.99-5.99%/mo, 5-min approval. "
+        "Red flags: no SEC registration, requests contacts/gallery access, charges >6%/month (BSP limit). "
+        "SEC blocked 200+ illegal lending apps in 2025."
+    ),
+    "bad credit loan": (
+        "CIC score below 580 = poor credit. Lenders that accept low scores: Tonik, Tala, Cashalo, RFC. "
+        "Tala: accepts first-time borrowers with no credit history, ₱1k-₱15k. "
+        "RFC (Radiowealth Finance): accepts low CIC scores, ₱5k-₱500k, requires collateral for large amounts. "
+        "Rebuilding tips: pay on time for 6 months (+40-60 points), reduce utilization below 30% (+20-40 points). "
+        "Secured credit card (BPI, Metrobank): requires ₱5k-₱10k deposit, builds credit in 6-12 months."
+    ),
 }
 
 # Angles by audience type
@@ -212,6 +244,10 @@ IMG_QUERIES = {
     "emergency loan": "emergency financial help",
     "credit": "credit score report financial",
     "comparison": "comparison chart financial planning",
+    "CIC credit report": "credit report document financial review",
+    "loan calculator": "calculator finance budget planning",
+    "online loan app": "smartphone mobile app loan application",
+    "bad credit loan": "credit score low financial help",
 }
 
 # Category mapping
@@ -228,6 +264,10 @@ CORE_CATEGORIES = {
     "emergency loan": "Loans",
     "credit": "Credit Education",
     "comparison": "Financial Planning",
+    "CIC credit report": "Credit Education",
+    "loan calculator": "Financial Planning",
+    "online loan app": "Loans",
+    "bad credit loan": "Loans",
 }
 
 
