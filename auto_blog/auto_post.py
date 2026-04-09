@@ -71,46 +71,79 @@ GEO_WORDS = [
     "davao", "quezon city", "pasig", "taguig",
 ]
 
-# High-value keyword lists (priority selection)
-HIGH_TRAFFIC_KEYWORDS = [
-    "online loan philippines", "fast loan philippines", "cash loan philippines",
-    "personal loan philippines", "loan app philippines", "quick cash loan",
-    "instant loan approval", "emergency loan philippines",
-    "CIC credit report philippines", "loan calculator philippines",
-    "best online loan app philippines", "bad credit loan philippines",
+# ---------------------------------------------------------------------------
+# 3-Tier Weighted Keyword System
+# Tier 1 (60%): Core product keywords — directly tied to Credit Kaagapay's value prop
+# Tier 2 (30%): Supporting traffic keywords — high volume, easy loan bridge
+# Tier 3 (10%): Brand building keywords — authority, comparison, credit education
+# ---------------------------------------------------------------------------
+
+TIER_1_KEYWORDS = [
+    # Direct product match: loan finding + credit score checking
+    "online loan philippines",
+    "personal loan philippines",
+    "cash loan philippines",
+    "emergency loan philippines",
+    "CIC credit report philippines",
+    "bad credit loan philippines",
+    "check credit score philippines",
+    "loan app philippines",
+    "instant loan approval philippines",
+    "online loan app philippines",
 ]
 
-HIGH_CONVERSION_KEYWORDS = [
-    "loan no payslip philippines", "loan for unemployed philippines",
-    "loan with bad credit philippines", "instant cash loan same day",
-    "loan easy approval no documents", "guaranteed loan approval philippines",
-    "loan for OFW philippines", "loan for students philippines",
+TIER_2_KEYWORDS = [
+    # High traffic, easy bridge to loan/credit topic
+    "fast loan philippines",
+    "quick cash loan philippines",
+    "loan for unemployed philippines",
+    "loan for OFW philippines",
+    "loan no payslip philippines",
+    "loan with bad credit philippines",
+    "guaranteed loan approval philippines",
+    "loan calculator philippines",
+    "same day loan philippines",
+    "instant cash loan same day philippines",
+    "loan easy approval no documents philippines",
+    "best online loan app philippines",
+    "legit loan app philippines",
+    "loan app low interest philippines",
 ]
 
-GEO_KEYWORDS = [
-    "cash loan manila", "personal loan cebu", "loan app makati",
-    "fast loan davao", "emergency loan quezon city",
-    "online loan pasig", "salary loan taguig",
-]
-
-APP_COMPETITOR_KEYWORDS = [
-    "best loan app 2026 philippines", "legit loan app no rejection",
-    "loan app low interest rate", "loan app instant approval philippines",
-    "tala vs cashalo vs tonik 2026",
-]
-
-COMPARISON_KEYWORDS = [
-    "SSS loan vs Pag-IBIG loan", "bank loan vs online loan philippines",
+TIER_3_KEYWORDS = [
+    # Brand authority: comparison, credit education, niche audiences
+    "SSS loan vs Pag-IBIG loan philippines",
+    "bank loan vs online loan philippines",
     "credit card vs personal loan philippines",
     "GCash GLoan vs Maya Credit 2026",
-]
-
-CREDIT_KEYWORDS = [
-    "credit score philippines free", "how to check CIC credit report",
+    "tala vs cashalo vs tonik 2026",
+    "credit score philippines free",
+    "how to check CIC credit report",
     "improve credit score fast philippines",
     "credit card application first time philippines",
     "build credit history from zero philippines",
+    "loan for students philippines",
+    "salary loan philippines",
+    "cash loan manila",
+    "personal loan cebu",
+    "fast loan davao",
 ]
+
+# Keep legacy names as aliases for backward compatibility
+HIGH_TRAFFIC_KEYWORDS = TIER_1_KEYWORDS
+HIGH_CONVERSION_KEYWORDS = TIER_2_KEYWORDS
+GEO_KEYWORDS = ["cash loan manila", "personal loan cebu", "loan app makati",
+                "fast loan davao", "emergency loan quezon city",
+                "online loan pasig", "salary loan taguig"]
+APP_COMPETITOR_KEYWORDS = ["best loan app 2026 philippines", "legit loan app no rejection",
+                           "loan app low interest rate", "loan app instant approval philippines",
+                           "tala vs cashalo vs tonik 2026"]
+COMPARISON_KEYWORDS = ["SSS loan vs Pag-IBIG loan", "bank loan vs online loan philippines",
+                       "credit card vs personal loan philippines", "GCash GLoan vs Maya Credit 2026"]
+CREDIT_KEYWORDS = ["credit score philippines free", "how to check CIC credit report",
+                   "improve credit score fast philippines",
+                   "credit card application first time philippines",
+                   "build credit history from zero philippines"]
 
 # Category-based data points (keyed by core word type)
 CATEGORY_DATA_POINTS = {
@@ -272,57 +305,64 @@ CORE_CATEGORIES = {
 
 
 def generate_topic(existing_titles):
-    """Generate a topic from the keyword matrix, prioritizing high-value keywords."""
+    """Generate a topic using 3-tier weighted keyword system.
 
-    # Priority tiers: try high-value keywords first, then matrix combos
-    priority_pools = [
-        HIGH_TRAFFIC_KEYWORDS,
-        HIGH_CONVERSION_KEYWORDS,
-        CREDIT_KEYWORDS,
-        COMPARISON_KEYWORDS,
-        APP_COMPETITOR_KEYWORDS,
-        GEO_KEYWORDS,
-    ]
+    Tier 1 (60%): Core product keywords — online loan, personal loan, CIC credit report, bad credit loan
+    Tier 2 (30%): Supporting traffic keywords — fast loan, OFW loan, loan calculator, etc.
+    Tier 3 (10%): Brand building — comparisons, credit education, geo-specific
+    """
 
-    # 60% chance to pick from priority pools, 40% from matrix generator
-    use_priority = random.random() < 0.6
+    def _pick_from_tier(tier_pool):
+        """Pick an unused keyword from a tier pool. Returns None if all used."""
+        shuffled = tier_pool[:]
+        random.shuffle(shuffled)
+        for kw in shuffled:
+            if not any(kw.lower() in title.lower() for title in existing_titles):
+                return kw
+        return None  # all used, allow repeat
 
-    if use_priority:
-        # Flatten priority pools, shuffle, find unused keyword
-        all_priority = []
-        for pool in priority_pools:
-            all_priority.extend(pool)
-        random.shuffle(all_priority)
+    # Weighted tier selection
+    roll = random.random()
+    if roll < 0.60:
+        tier_label = "Tier 1 (Core Product, 60%)"
+        kw = _pick_from_tier(TIER_1_KEYWORDS)
+        if kw is None:  # all Tier 1 used, fall to Tier 2
+            kw = _pick_from_tier(TIER_2_KEYWORDS)
+            tier_label = "Tier 2 (fallback from exhausted Tier 1)"
+    elif roll < 0.90:
+        tier_label = "Tier 2 (Supporting Traffic, 30%)"
+        kw = _pick_from_tier(TIER_2_KEYWORDS)
+        if kw is None:
+            kw = _pick_from_tier(TIER_1_KEYWORDS)
+            tier_label = "Tier 1 (fallback from exhausted Tier 2)"
+    else:
+        tier_label = "Tier 3 (Brand Building, 10%)"
+        kw = _pick_from_tier(TIER_3_KEYWORDS)
+        if kw is None:
+            kw = _pick_from_tier(TIER_2_KEYWORDS)
+            tier_label = "Tier 2 (fallback from exhausted Tier 3)"
 
-        for kw in all_priority:
-            kw_lower = kw.lower()
-            if not any(kw_lower in title for title in existing_titles):
-                return _build_topic_from_keyword(kw)
+    if kw:
+        print(f"  [Keyword Strategy] {tier_label}")
+        return _build_topic_from_keyword(kw)
 
-    # Matrix combination: modifier + core + audience + geo
+    # Last resort: matrix combination (modifier + core + audience + geo)
+    print("  [Keyword Strategy] Matrix fallback (all tiers exhausted)")
     attempts = 0
     while attempts < 50:
         core = random.choice(CORE_WORDS)
         modifier = random.choice(MODIFIERS)
         audience = random.choice(AUDIENCE_WORDS)
         geo = random.choice(GEO_WORDS)
-
-        # Combine: "fast personal loan for OFW philippines"
-        keyword = f"{modifier} {core} {audience} {geo}"
-
-        kw_lower = keyword.lower()
-        if not any(kw_lower in title for title in existing_titles):
+        keyword = f"{modifier} {core} for {audience} {geo}"
+        if not any(keyword.lower() in title.lower() for title in existing_titles):
             return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
-
         attempts += 1
 
-    # Fallback: random matrix combo regardless of duplicates
+    # Absolute fallback
     core = random.choice(CORE_WORDS)
-    modifier = random.choice(MODIFIERS)
-    audience = random.choice(AUDIENCE_WORDS)
-    geo = random.choice(GEO_WORDS)
-    keyword = f"{modifier} {core} {audience} {geo}"
-    return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
+    keyword = f"{random.choice(MODIFIERS)} {core} for {random.choice(AUDIENCE_WORDS)} {random.choice(GEO_WORDS)}"
+    return _build_topic_from_keyword(keyword)
 
 
 def _build_topic_from_keyword(keyword, core=None, audience=None, geo=None):
