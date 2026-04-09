@@ -72,6 +72,81 @@ GEO_WORDS = [
 ]
 
 # ---------------------------------------------------------------------------
+# Problem-Oriented Title Strategy
+# When keyword/topic matches these pools, generate a specific user-problem title
+# instead of a generic keyword-based title. Falls back to keyword title if no match.
+# ---------------------------------------------------------------------------
+
+TITLE_CONSTRAINTS = ["no payslip", "no valid id", "no credit check"]
+TITLE_AUDIENCE = ["unemployed", "student", "first time borrower"]
+TITLE_SITUATIONS = ["emergency", "instant", "same day"]
+TITLE_AMOUNTS = ["1000", "2000", "3000", "5000", "10000", "20000", "50000"]
+
+# Fixed FAQ questions appended to every article
+FIXED_FAQ_QUESTIONS = [
+    {
+        "q": "Can I get a loan without payslip in the Philippines?",
+        "a": "Yes. Several SEC-registered lenders — including Tonik, Tala, and Cashalo — do not require a payslip. They use alternative income verification such as bank statements, GCash transaction history, or government IDs. Approval typically takes 1-24 hours."
+    },
+    {
+        "q": "What is the fastest loan approval in the Philippines?",
+        "a": "Online lending apps like Tonik Quick Loan and Maya Credit offer approval in as fast as 1 hour. Traditional banks like BPI and BDO take 1-5 business days. For the fastest result, apply through a SEC-registered app with a complete profile and good CIC credit score."
+    },
+    {
+        "q": "Are there legit loan apps without credit check in the Philippines?",
+        "a": "Yes, but always verify SEC registration first at sec.gov.ph. Apps like Tala and Cashalo use alternative data (phone usage, social connections) instead of traditional credit checks. Avoid any app not listed on the SEC's registered lending companies list — these are often illegal and predatory."
+    },
+]
+
+
+def build_problem_oriented_title(keyword, topic):
+    """Try to build a problem-oriented title from the keyword/topic.
+    Returns a title string if a match is found, or None to fall back to keyword-based title.
+
+    Patterns:
+    - how to get a loan without [constraint] in philippines
+    - loan for [audience] philippines
+    - best loan apps for [situation] philippines
+    - [amount] peso loan without [constraint]
+    """
+    kw_lower = keyword.lower()
+    angle_lower = topic.get("angle", "").lower()
+    combined = kw_lower + " " + angle_lower
+
+    # Check constraints
+    matched_constraint = next((c for c in TITLE_CONSTRAINTS if c in combined), None)
+    # Check audience
+    matched_audience = next((a for a in TITLE_AUDIENCE if a in combined), None)
+    # Check situations
+    matched_situation = next((s for s in TITLE_SITUATIONS if s in combined), None)
+    # Check amounts (look for digit patterns like 3000, 5000 etc)
+    matched_amount = next((amt for amt in TITLE_AMOUNTS if amt in combined), None)
+
+    candidates = []
+
+    if matched_constraint and matched_audience:
+        candidates.append(f"How to Get a Loan for {matched_audience.title()} Without {matched_constraint.title()} Philippines")
+    if matched_constraint:
+        if matched_amount:
+            title = f"₱{int(matched_amount):,} Peso Loan Without {matched_constraint.title()} Philippines"
+            if len(title) <= 70:
+                candidates.append(title)
+        candidates.append(f"How to Get a Loan Without {matched_constraint.title()} in Philippines")
+    if matched_audience:
+        candidates.append(f"Loan for {matched_audience.title()} Philippines — Your 2026 Guide")
+    if matched_situation:
+        candidates.append(f"Best Loan Apps for {matched_situation.title()} Cash Philippines 2026")
+
+    if not candidates:
+        return None
+
+    # Pick shortest candidate that is <= 70 chars, else pick first
+    short_candidates = [c for c in candidates if len(c) <= 70]
+    chosen = short_candidates[0] if short_candidates else candidates[0]
+    return chosen
+
+
+# ---------------------------------------------------------------------------
 # 3-Tier Weighted Keyword System
 # Tier 1 (60%): Core product keywords — directly tied to Credit Kaagapay's value prop
 # Tier 2 (30%): Supporting traffic keywords — high volume, easy loan bridge
@@ -949,9 +1024,32 @@ FORMATTING:
 
 LENGTH: 1500-1800 words. Every word must earn its place.
 
+TITLE GENERATION RULES (CRITICAL):
+First, check if the topic matches any of these user-problem patterns. If yes, use that title format. If no match, use a natural keyword-based title.
+
+Problem-oriented patterns (preferred when applicable):
+- "How to Get a Loan Without [constraint] in Philippines" (constraints: no payslip / no valid id / no credit check)
+- "Loan for [audience] Philippines" (audience: unemployed / student / first time borrower)
+- "Best Loan Apps for [situation] Philippines" (situations: emergency / instant / same day)
+- "[Amount] Peso Loan Without [constraint]" (e.g., ₱5,000 Peso Loan Without Payslip)
+
+Title rules:
+- Titles must be natural and readable — not keyword-stuffed
+- Avoid generic titles like "Online Loan Philippines Guide 2026"
+- Focus on the specific user problem in the topic
+- Keep titles under 70 characters if possible
+- Prioritize "how to" style titles when the topic is about overcoming a constraint
+- Never generate a title that duplicates an existing article
+
+FAQ SECTION RULES:
+The article MUST end with exactly these 3 FAQ questions (use these exact questions, write fresh answers that fit the article's specific topic):
+1. Can I get a loan without payslip in the Philippines?
+2. What is the fastest loan approval in the Philippines?
+3. Are there legit loan apps without credit check in the Philippines?
+
 OUTPUT (valid JSON only, no markdown fences):
 {{
-    "title": "under 60 chars, includes keyword, not clickbait",
+    "title": "problem-oriented or keyword-based title, under 70 chars",
     "meta_description": "under 155 chars, includes keyword, compelling",
     "excerpt": "2 sentences summarizing the key value",
     "content": "full HTML content",
