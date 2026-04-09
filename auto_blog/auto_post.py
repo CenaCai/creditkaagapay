@@ -409,6 +409,172 @@ def pick_topic(existing_titles):
 
 
 # ---------------------------------------------------------------------------
+# News-Jacking SEO: Fetch PH news → score loan relevance → generate news article
+# ---------------------------------------------------------------------------
+
+# Philippine news RSS feeds (financial, business, lifestyle)
+NEWS_RSS_FEEDS = [
+    "https://business.inquirer.net/feed",
+    "https://www.philstar.com/rss/business",
+    "https://www.bworldonline.com/feed",
+    "https://mb.com.ph/category/business/feed",
+    "https://news.abs-cbn.com/rss/business",
+    "https://www.rappler.com/money/feed",
+]
+
+
+def fetch_ph_news(max_items=30):
+    """Fetch recent news from Philippine RSS feeds. Returns list of {title, summary, url, source}."""
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime
+
+    items = []
+    cutoff_hours = 48  # grab news from last 48 hours
+    now = datetime.now(timezone.utc)
+
+    for feed_url in NEWS_RSS_FEEDS:
+        source = feed_url.split("/")[2].replace("www.", "").replace("business.", "")
+        try:
+            resp = requests.get(feed_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+            if resp.status_code != 200:
+                continue
+            root = ET.fromstring(resp.content)
+            channel = root.find("channel")
+            if channel is None:
+                continue
+            for item in channel.findall("item")[:10]:
+                title_el = item.find("title")
+                desc_el = item.find("description")
+                link_el = item.find("link")
+                pubdate_el = item.find("pubDate")
+                if title_el is None:
+                    continue
+                title = title_el.text or ""
+                summary = re.sub(r"<[^>]+>", "", (desc_el.text or "") if desc_el is not None else "")[:300]
+                url = link_el.text or "" if link_el is not None else ""
+                # Check recency
+                try:
+                    pub_dt = parsedate_to_datetime(pubdate_el.text) if pubdate_el is not None else None
+                    if pub_dt and (now - pub_dt).total_seconds() > cutoff_hours * 3600:
+                        continue
+                except Exception:
+                    pass
+                items.append({"title": title, "summary": summary, "url": url, "source": source})
+                if len(items) >= max_items:
+                    break
+        except Exception as e:
+            print(f"  RSS fetch failed ({source}): {e}")
+        if len(items) >= max_items:
+            break
+
+    print(f"  Fetched {len(items)} news items from {len(NEWS_RSS_FEEDS)} feeds")
+    return items
+
+
+def score_news_for_loan_angle(news_items):
+    """Use Gemini to score each news item for loan/credit relevance. Returns best item or None."""
+    if not news_items:
+        return None
+
+    news_list = "\n".join(
+        f"{i+1}. [{item['source']}] {item['title']} — {item['summary'][:150]}"
+        for i, item in enumerate(news_items[:20])
+    )
+
+    prompt = f"""You are an SEO strategist for a Philippine personal finance website (Credit Kaagapay).
+Review these recent Philippine news headlines and score each one (0-10) on how naturally it can be connected to a loan, credit score, or personal finance article.
+
+Scoring guide:
+- 9-10: Directly about loans, interest rates, BSP policy, SEC enforcement, digital lending, credit scores
+- 7-8: About economic hardship, job loss, inflation, OFW remittances, tuition, medical bills — easy to bridge to loans
+- 5-6: Business news, property, elections — possible but forced connection
+- 0-4: Sports, entertainment, crime, weather — very hard to connect naturally
+
+NEWS ITEMS:
+{news_list}
+
+Return ONLY valid JSON (no markdown):
+{{"best_index": <1-based index of highest scoring item, or 0 if none score >=7>,
+  "score": <score of best item>,
+  "loan_angle": "<one sentence: how to bridge this news to a loan/credit topic>",
+  "target_keyword": "<the most relevant loan keyword from this list: online loan philippines, personal loan philippines, emergency loan philippines, bad credit loan philippines, CIC credit report philippines, loan for unemployed philippines, cash loan philippines>"}}"""
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 500},
+    }
+
+    GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"]
+    for model in GEMINI_MODELS:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        try:
+            resp = requests.post(url, json=payload, timeout=30)
+            if resp.status_code == 200:
+                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                text = re.sub(r"^```(?:json)?\n?", "", text)
+                text = re.sub(r"\n?```$", "", text)
+                result = json.loads(text)
+                idx = result.get("best_index", 0)
+                score = result.get("score", 0)
+                if idx > 0 and score >= 7 and idx <= len(news_items):
+                    chosen = news_items[idx - 1]
+                    chosen["loan_angle"] = result.get("loan_angle", "")
+                    chosen["target_keyword"] = result.get("target_keyword", "online loan philippines")
+                    print(f"  Best news item (score {score}/10): {chosen['title'][:80]}")
+                    print(f"  Loan angle: {chosen['loan_angle']}")
+                    return chosen
+                else:
+                    print(f"  No news item scored >=7 (best score: {score})")
+                    return None
+        except Exception as e:
+            print(f"  News scoring failed ({model}): {e}")
+    return None
+
+
+def build_news_topic(news_item):
+    """Build a topic dict from a news item for news-jacking article generation."""
+    keyword = news_item.get("target_keyword", "online loan philippines")
+    core = "loan"
+    for cw in sorted(CORE_WORDS, key=len, reverse=True):
+        if cw.lower() in keyword.lower():
+            core = cw
+            break
+    data_points = CATEGORY_DATA_POINTS.get(core, CATEGORY_DATA_POINTS["loan"])
+    img_query = IMG_QUERIES.get(core, "loan finance philippines")
+    category = CORE_CATEGORIES.get(core, "Loans")
+    return {
+        "keyword": keyword,
+        "angle": news_item.get("loan_angle", "practical guide with real bank rates"),
+        "category": category,
+        "img_query": img_query,
+        "data_points": data_points,
+        "news_title": news_item["title"],
+        "news_summary": news_item["summary"],
+        "news_url": news_item["url"],
+        "news_source": news_item["source"],
+        "is_news_jacking": True,
+    }
+
+
+def pick_topic_with_news(existing_titles):
+    """30% chance: use news-jacking strategy. 70%: use keyword matrix."""
+    use_news = random.random() < 0.30
+    if use_news:
+        print("[Strategy] Trying News-Jacking SEO (30% chance triggered)...")
+        news_items = fetch_ph_news()
+        if news_items:
+            best_news = score_news_for_loan_angle(news_items)
+            if best_news:
+                topic = build_news_topic(best_news)
+                print(f"[Strategy] ✓ News-jacking topic selected: {topic['keyword']}")
+                return topic
+        print("[Strategy] No suitable news found, falling back to keyword matrix")
+    else:
+        print("[Strategy] Using keyword matrix strategy (70% default)")
+    return generate_topic(existing_titles)
+
+
+# ---------------------------------------------------------------------------
 # Pexels image helpers
 # ---------------------------------------------------------------------------
 def search_pexels_images(query, count=3):
@@ -658,12 +824,24 @@ Place the first image after the opening paragraph, distribute the rest evenly.""
     # Get current date for freshness signal
     current_date = datetime.now(timezone.utc).strftime("%B %Y")
 
+    # Build news context block if this is a news-jacking article
+    news_context = ""
+    if topic.get("is_news_jacking"):
+        news_context = f"""
+NEWS HOOK (use this real news event as your opening hook — summarize it in 1-2 sentences, then bridge to the loan topic):
+Headline: {topic.get('news_title', '')}
+Summary: {topic.get('news_summary', '')}
+Source: {topic.get('news_source', '')} ({topic.get('news_url', '')})
+Bridge angle: {topic.get('angle', '')}
+
+IMPORTANT: Start the article by referencing this real news event. Cite the source inline (e.g., "According to {topic.get('news_source', 'local reports')}..."). Then naturally transition to the loan/credit topic."""
+
     prompt = f"""You are a Filipino personal finance blogger writing for Credit Kaagapay (a free credit score & loan finder app). Write like a real person, not an AI.
 
 TOPIC: {topic['keyword']}
 ANGLE: {topic['angle']}
 CATEGORY: {topic['category']}
-DATE: {current_date}
+DATE: {current_date}{news_context}
 
 REAL DATA TO USE (weave these into the article naturally):
 {data_points}
@@ -962,9 +1140,11 @@ def main():
     existing = get_existing_posts()
     print(f"Found {len(existing)} existing posts")
 
-    # Pick topic
-    topic = pick_topic(existing)
+    # Pick topic (30% news-jacking, 70% keyword matrix)
+    topic = pick_topic_with_news(existing)
     print(f"Selected topic: {topic['keyword']}")
+    if topic.get("is_news_jacking"):
+        print(f"[News-Jacking] Based on: {topic.get('news_title', 'N/A')[:80]}")
     print(f"Angle: {topic['angle']}")
     print(f"Category: {topic['category']}")
     print()
