@@ -52,7 +52,6 @@ EXISTING_ARTICLES = {
 CORE_WORDS = [
     "loan", "cash loan", "online loan", "quick loan", "fast loan",
     "personal loan", "credit loan", "money loan", "salary loan", "emergency loan",
-    "CIC credit report", "loan calculator", "online loan app", "bad credit loan",
 ]
 
 MODIFIERS = [
@@ -71,154 +70,81 @@ GEO_WORDS = [
     "davao", "quezon city", "pasig", "taguig",
 ]
 
-# ---------------------------------------------------------------------------
-# Problem-Oriented Title Strategy
-# When keyword/topic matches these pools, generate a specific user-problem title
-# instead of a generic keyword-based title. Falls back to keyword title if no match.
-# ---------------------------------------------------------------------------
-
-TITLE_CONSTRAINTS = ["no payslip", "no valid id", "no credit check"]
-TITLE_AUDIENCE = ["unemployed", "student", "first time borrower"]
-TITLE_SITUATIONS = ["emergency", "instant", "same day"]
-TITLE_AMOUNTS = ["1000", "2000", "3000", "5000", "10000", "20000", "50000"]
-
-# Fixed FAQ questions appended to every article
-FIXED_FAQ_QUESTIONS = [
-    {
-        "q": "Can I get a loan without payslip in the Philippines?",
-        "a": "Yes. Several SEC-registered lenders — including Tonik, Tala, and Cashalo — do not require a payslip. They use alternative income verification such as bank statements, GCash transaction history, or government IDs. Approval typically takes 1-24 hours."
-    },
-    {
-        "q": "What is the fastest loan approval in the Philippines?",
-        "a": "Online lending apps like Tonik Quick Loan and Maya Credit offer approval in as fast as 1 hour. Traditional banks like BPI and BDO take 1-5 business days. For the fastest result, apply through a SEC-registered app with a complete profile and good CIC credit score."
-    },
-    {
-        "q": "Are there legit loan apps without credit check in the Philippines?",
-        "a": "Yes, but always verify SEC registration first at sec.gov.ph. Apps like Tala and Cashalo use alternative data (phone usage, social connections) instead of traditional credit checks. Avoid any app not listed on the SEC's registered lending companies list — these are often illegal and predatory."
-    },
+# High-value keyword lists (priority selection)
+HIGH_TRAFFIC_KEYWORDS = [
+    "online loan philippines", "fast loan philippines", "cash loan philippines",
+    "personal loan philippines", "loan app philippines", "quick cash loan",
+    "instant loan approval", "emergency loan philippines",
 ]
 
-
-def build_problem_oriented_title(keyword, topic):
-    """Try to build a problem-oriented title from the keyword/topic.
-    Returns a title string if a match is found, or None to fall back to keyword-based title.
-
-    Patterns:
-    - how to get a loan without [constraint] in philippines
-    - loan for [audience] philippines
-    - best loan apps for [situation] philippines
-    - [amount] peso loan without [constraint]
-    """
-    kw_lower = keyword.lower()
-    angle_lower = topic.get("angle", "").lower()
-    combined = kw_lower + " " + angle_lower
-
-    # Check constraints
-    matched_constraint = next((c for c in TITLE_CONSTRAINTS if c in combined), None)
-    # Check audience
-    matched_audience = next((a for a in TITLE_AUDIENCE if a in combined), None)
-    # Check situations
-    matched_situation = next((s for s in TITLE_SITUATIONS if s in combined), None)
-    # Check amounts (look for digit patterns like 3000, 5000 etc)
-    matched_amount = next((amt for amt in TITLE_AMOUNTS if amt in combined), None)
-
-    candidates = []
-
-    if matched_constraint and matched_audience:
-        candidates.append(f"How to Get a Loan for {matched_audience.title()} Without {matched_constraint.title()} Philippines")
-    if matched_constraint:
-        if matched_amount:
-            title = f"₱{int(matched_amount):,} Peso Loan Without {matched_constraint.title()} Philippines"
-            if len(title) <= 70:
-                candidates.append(title)
-        candidates.append(f"How to Get a Loan Without {matched_constraint.title()} in Philippines")
-    if matched_audience:
-        candidates.append(f"Loan for {matched_audience.title()} Philippines — Your 2026 Guide")
-    if matched_situation:
-        candidates.append(f"Best Loan Apps for {matched_situation.title()} Cash Philippines 2026")
-
-    if not candidates:
-        return None
-
-    # Pick shortest candidate that is <= 70 chars, else pick first
-    short_candidates = [c for c in candidates if len(c) <= 70]
-    chosen = short_candidates[0] if short_candidates else candidates[0]
-    return chosen
-
-
-# ---------------------------------------------------------------------------
-# 3-Tier Weighted Keyword System
-# Tier 1 (60%): Core product keywords — directly tied to Credit Kaagapay's value prop
-# Tier 2 (30%): Supporting traffic keywords — high volume, easy loan bridge
-# Tier 3 (10%): Brand building keywords — authority, comparison, credit education
-# ---------------------------------------------------------------------------
-
-TIER_1_KEYWORDS = [
-    # Direct product match: loan finding + credit score checking
-    "online loan philippines",
-    "personal loan philippines",
-    "cash loan philippines",
-    "emergency loan philippines",
-    "CIC credit report philippines",
-    "bad credit loan philippines",
-    "check credit score philippines",
-    "loan app philippines",
-    "instant loan approval philippines",
-    "online loan app philippines",
+HIGH_CONVERSION_KEYWORDS = [
+    "loan no payslip philippines", "loan for unemployed philippines",
+    "loan with bad credit philippines", "instant cash loan same day",
+    "loan easy approval no documents", "guaranteed loan approval philippines",
+    "loan for OFW philippines", "loan for students philippines",
 ]
 
-TIER_2_KEYWORDS = [
-    # High traffic, easy bridge to loan/credit topic
-    "fast loan philippines",
-    "quick cash loan philippines",
-    "loan for unemployed philippines",
-    "loan for OFW philippines",
-    "loan no payslip philippines",
-    "loan with bad credit philippines",
-    "guaranteed loan approval philippines",
-    "loan calculator philippines",
-    "same day loan philippines",
-    "instant cash loan same day philippines",
-    "loan easy approval no documents philippines",
-    "best online loan app philippines",
-    "legit loan app philippines",
-    "loan app low interest philippines",
+GEO_KEYWORDS = [
+    "cash loan manila", "personal loan cebu", "loan app makati",
+    "fast loan davao", "emergency loan quezon city",
+    "online loan pasig", "salary loan taguig",
 ]
 
-TIER_3_KEYWORDS = [
-    # Brand authority: comparison, credit education, niche audiences
-    "SSS loan vs Pag-IBIG loan philippines",
-    "bank loan vs online loan philippines",
+APP_COMPETITOR_KEYWORDS = [
+    "best loan app 2026 philippines", "legit loan app no rejection",
+    "loan app low interest rate", "loan app instant approval philippines",
+    "tala vs cashalo vs tonik 2026",
+]
+
+COMPARISON_KEYWORDS = [
+    "SSS loan vs Pag-IBIG loan", "bank loan vs online loan philippines",
     "credit card vs personal loan philippines",
     "GCash GLoan vs Maya Credit 2026",
-    "tala vs cashalo vs tonik 2026",
-    "credit score philippines free",
-    "how to check CIC credit report",
+]
+
+# ---------------------------------------------------------------------------
+# Title Pattern System (long-tail, problem-specific titles)
+# ---------------------------------------------------------------------------
+TITLE_PATTERNS = [
+    "how to get a loan without {constraint} in philippines",
+    "loan for {audience} philippines",
+    "best loan apps for {situation} philippines",
+    "{amount} peso loan without {constraint}",
+    "how to apply for a loan as a {audience} in the philippines",
+    "where to get {situation} loan without {constraint} philippines",
+    "{situation} cash loan for {audience} philippines",
+]
+
+TITLE_CONSTRAINTS = ["no payslip", "no valid id", "no credit check"]
+TITLE_AUDIENCES = ["unemployed", "student", "first time borrower"]
+TITLE_SITUATIONS = ["emergency", "instant", "same day"]
+TITLE_AMOUNTS = ["5000", "10000", "20000", "50000"]
+
+# News-style title patterns (used when article is news-based)
+NEWS_TITLE_PATTERNS = [
+    "What {event} Means for Borrowers in the Philippines",
+    "How {event} Affects Loan Access in the Philippines",
+    "{event}: What It Means for People Who Need Loans",
+    "{event} and What Filipino Borrowers Should Know",
+    "How {event} Could Change Lending in the Philippines",
+]
+
+# FAQ templates (appended to every article)
+FAQ_TEMPLATES = [
+    "Can I get a loan without {constraint} in the Philippines?",
+    "What are the requirements for {keyword}?",
+    "How fast can I get approved for a loan in the Philippines?",
+    "Is it safe to apply for {keyword} online?",
+    "What happens if I can't repay my {keyword} on time?",
+    "How much can I borrow with {keyword}?",
+]
+
+CREDIT_KEYWORDS = [
+    "credit score philippines free", "how to check CIC credit report",
     "improve credit score fast philippines",
     "credit card application first time philippines",
     "build credit history from zero philippines",
-    "loan for students philippines",
-    "salary loan philippines",
-    "cash loan manila",
-    "personal loan cebu",
-    "fast loan davao",
 ]
-
-# Keep legacy names as aliases for backward compatibility
-HIGH_TRAFFIC_KEYWORDS = TIER_1_KEYWORDS
-HIGH_CONVERSION_KEYWORDS = TIER_2_KEYWORDS
-GEO_KEYWORDS = ["cash loan manila", "personal loan cebu", "loan app makati",
-                "fast loan davao", "emergency loan quezon city",
-                "online loan pasig", "salary loan taguig"]
-APP_COMPETITOR_KEYWORDS = ["best loan app 2026 philippines", "legit loan app no rejection",
-                           "loan app low interest rate", "loan app instant approval philippines",
-                           "tala vs cashalo vs tonik 2026"]
-COMPARISON_KEYWORDS = ["SSS loan vs Pag-IBIG loan", "bank loan vs online loan philippines",
-                       "credit card vs personal loan philippines", "GCash GLoan vs Maya Credit 2026"]
-CREDIT_KEYWORDS = ["credit score philippines free", "how to check CIC credit report",
-                   "improve credit score fast philippines",
-                   "credit card application first time philippines",
-                   "build credit history from zero philippines"]
 
 # Category-based data points (keyed by core word type)
 CATEGORY_DATA_POINTS = {
@@ -294,35 +220,6 @@ CATEGORY_DATA_POINTS = {
         "GCash GLoan: 3.99-5.99%/mo. Maya Credit: 3.5% flat fee. "
         "Add-on rate 1.5%/mo = EIR 32.4%/yr. Diminishing 1.5%/mo = EIR 18%/yr."
     ),
-    "CIC credit report": (
-        "CIC (Credit Information Corporation) collects data from all BSP-supervised banks and lenders. "
-        "CIC score range: 300-850. Score >700 = good credit. Free report via creditinfo.gov.ph. "
-        "Report includes: payment history (35%), credit utilization (30%), credit age (15%), new inquiries (10%), mix (10%). "
-        "Dispute errors for free at CIC — takes 30 days. Negative records removed after 5 years. "
-        "BPI, BDO, Metrobank, CIMB, Tonik all report to CIC monthly."
-    ),
-    "loan calculator": (
-        "Add-on rate vs diminishing balance: 1.5%/mo add-on = ~32.4% EIR; 1.5%/mo diminishing = ~18% EIR. "
-        "BPI personal loan: ₱50k at 1.2%/mo for 12 months = ₱4,633/mo total payment. "
-        "CIMB: ₱50k at 1.19%/mo for 24 months = ₱2,595/mo. "
-        "SSS salary loan: ₱20k at 10%/yr for 24 months = ₱920/mo. "
-        "Rule of thumb: monthly payment should not exceed 30% of net monthly income."
-    ),
-    "online loan app": (
-        "SEC-registered apps (2026): Tonik, Maya, CIMB, Tala, Cashalo, Lendly, UnionDigital. "
-        "Tonik Quick Loan: ₱5k-₱50k, 1.59%/mo, 1-hour approval. "
-        "Maya Credit: ₱2k-₱30k, 3.5% flat fee, 30-min approval. "
-        "GCash GLoan: ₱5k-₱25k, 3.99-5.99%/mo, 5-min approval. "
-        "Red flags: no SEC registration, requests contacts/gallery access, charges >6%/month (BSP limit). "
-        "SEC blocked 200+ illegal lending apps in 2025."
-    ),
-    "bad credit loan": (
-        "CIC score below 580 = poor credit. Lenders that accept low scores: Tonik, Tala, Cashalo, RFC. "
-        "Tala: accepts first-time borrowers with no credit history, ₱1k-₱15k. "
-        "RFC (Radiowealth Finance): accepts low CIC scores, ₱5k-₱500k, requires collateral for large amounts. "
-        "Rebuilding tips: pay on time for 6 months (+40-60 points), reduce utilization below 30% (+20-40 points). "
-        "Secured credit card (BPI, Metrobank): requires ₱5k-₱10k deposit, builds credit in 6-12 months."
-    ),
 }
 
 # Angles by audience type
@@ -352,10 +249,6 @@ IMG_QUERIES = {
     "emergency loan": "emergency financial help",
     "credit": "credit score report financial",
     "comparison": "comparison chart financial planning",
-    "CIC credit report": "credit report document financial review",
-    "loan calculator": "calculator finance budget planning",
-    "online loan app": "smartphone mobile app loan application",
-    "bad credit loan": "credit score low financial help",
 }
 
 # Category mapping
@@ -372,72 +265,93 @@ CORE_CATEGORIES = {
     "emergency loan": "Loans",
     "credit": "Credit Education",
     "comparison": "Financial Planning",
-    "CIC credit report": "Credit Education",
-    "loan calculator": "Financial Planning",
-    "online loan app": "Loans",
-    "bad credit loan": "Loans",
 }
 
 
+def _generate_title_from_pattern(existing_titles):
+    """Generate a long-tail title from TITLE_PATTERNS, ensuring no duplicates."""
+    patterns = list(TITLE_PATTERNS)
+    random.shuffle(patterns)
+
+    for pattern in patterns:
+        for _ in range(20):
+            title = pattern.format(
+                constraint=random.choice(TITLE_CONSTRAINTS),
+                audience=random.choice(TITLE_AUDIENCES),
+                situation=random.choice(TITLE_SITUATIONS),
+                amount=random.choice(TITLE_AMOUNTS),
+            )
+            # Skip if too long
+            if len(title) > 70:
+                continue
+            title_lower = title.lower()
+            # Check not duplicate or too similar to existing
+            if not any(title_lower in t or t in title_lower for t in existing_titles):
+                return title
+    return None
+
+
 def generate_topic(existing_titles):
-    """Generate a topic using 3-tier weighted keyword system.
+    """Generate a topic from the keyword matrix, prioritizing high-value keywords."""
 
-    Tier 1 (60%): Core product keywords — online loan, personal loan, CIC credit report, bad credit loan
-    Tier 2 (30%): Supporting traffic keywords — fast loan, OFW loan, loan calculator, etc.
-    Tier 3 (10%): Brand building — comparisons, credit education, geo-specific
-    """
+    # Priority tiers: try high-value keywords first, then matrix combos
+    priority_pools = [
+        HIGH_TRAFFIC_KEYWORDS,
+        HIGH_CONVERSION_KEYWORDS,
+        CREDIT_KEYWORDS,
+        COMPARISON_KEYWORDS,
+        APP_COMPETITOR_KEYWORDS,
+        GEO_KEYWORDS,
+    ]
 
-    def _pick_from_tier(tier_pool):
-        """Pick an unused keyword from a tier pool. Returns None if all used."""
-        shuffled = tier_pool[:]
-        random.shuffle(shuffled)
-        for kw in shuffled:
-            if not any(kw.lower() in title.lower() for title in existing_titles):
-                return kw
-        return None  # all used, allow repeat
-
-    # Weighted tier selection
+    # 40% title patterns, 35% priority pools, 25% matrix generator
     roll = random.random()
-    if roll < 0.60:
-        tier_label = "Tier 1 (Core Product, 60%)"
-        kw = _pick_from_tier(TIER_1_KEYWORDS)
-        if kw is None:  # all Tier 1 used, fall to Tier 2
-            kw = _pick_from_tier(TIER_2_KEYWORDS)
-            tier_label = "Tier 2 (fallback from exhausted Tier 1)"
-    elif roll < 0.90:
-        tier_label = "Tier 2 (Supporting Traffic, 30%)"
-        kw = _pick_from_tier(TIER_2_KEYWORDS)
-        if kw is None:
-            kw = _pick_from_tier(TIER_1_KEYWORDS)
-            tier_label = "Tier 1 (fallback from exhausted Tier 2)"
-    else:
-        tier_label = "Tier 3 (Brand Building, 10%)"
-        kw = _pick_from_tier(TIER_3_KEYWORDS)
-        if kw is None:
-            kw = _pick_from_tier(TIER_2_KEYWORDS)
-            tier_label = "Tier 2 (fallback from exhausted Tier 3)"
 
-    if kw:
-        print(f"  [Keyword Strategy] {tier_label}")
-        return _build_topic_from_keyword(kw)
+    # Tier 1: Long-tail title patterns (40%)
+    if roll < 0.4:
+        title_kw = _generate_title_from_pattern(existing_titles)
+        if title_kw:
+            return _build_topic_from_keyword(title_kw)
 
-    # Last resort: matrix combination (modifier + core + audience + geo)
-    print("  [Keyword Strategy] Matrix fallback (all tiers exhausted)")
+    # Tier 2: Priority keyword pools (35%)
+    if roll < 0.75:
+        all_priority = []
+        for pool in priority_pools:
+            all_priority.extend(pool)
+        random.shuffle(all_priority)
+
+        for kw in all_priority:
+            kw_lower = kw.lower()
+            if not any(kw_lower in title for title in existing_titles):
+                return _build_topic_from_keyword(kw)
+
+    # Tier 3: Matrix combination (25%)
     attempts = 0
     while attempts < 50:
         core = random.choice(CORE_WORDS)
         modifier = random.choice(MODIFIERS)
         audience = random.choice(AUDIENCE_WORDS)
         geo = random.choice(GEO_WORDS)
-        keyword = f"{modifier} {core} for {audience} {geo}"
-        if not any(keyword.lower() in title.lower() for title in existing_titles):
+
+        keyword = f"{modifier} {core} {audience} {geo}"
+
+        kw_lower = keyword.lower()
+        if not any(kw_lower in title for title in existing_titles):
             return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
+
         attempts += 1
 
-    # Absolute fallback
+    # Fallback: try title pattern, then random matrix combo
+    title_kw = _generate_title_from_pattern(existing_titles)
+    if title_kw:
+        return _build_topic_from_keyword(title_kw)
+
     core = random.choice(CORE_WORDS)
-    keyword = f"{random.choice(MODIFIERS)} {core} for {random.choice(AUDIENCE_WORDS)} {random.choice(GEO_WORDS)}"
-    return _build_topic_from_keyword(keyword)
+    modifier = random.choice(MODIFIERS)
+    audience = random.choice(AUDIENCE_WORDS)
+    geo = random.choice(GEO_WORDS)
+    keyword = f"{modifier} {core} {audience} {geo}"
+    return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
 
 
 def _build_topic_from_keyword(keyword, core=None, audience=None, geo=None):
@@ -501,6 +415,94 @@ def _build_topic_from_keyword(keyword, core=None, audience=None, geo=None):
 
 
 # ---------------------------------------------------------------------------
+# News Scanning (Gemini-powered)
+# ---------------------------------------------------------------------------
+def scan_news():
+    """Use Gemini to find trending Philippine finance/lending news and score relevance.
+
+    Returns list of dicts: [{"headline": str, "summary": str, "score": int, "event": str}]
+    Score 1-10: how relevant the news is to Filipino borrowers/loans/credit.
+    """
+    if not GEMINI_API_KEY:
+        return []
+
+    current_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    prompt = f"""You are a Philippine financial news analyst. Today is {current_date}.
+
+Think of the most recent (last 7 days) news events in the Philippines related to:
+- Banking, lending, fintech, digital loans
+- BSP monetary policy, interest rate changes
+- SEC enforcement against illegal lenders
+- Government loan programs (SSS, Pag-IBIG, GSIS)
+- Major bank announcements, new loan products
+- Economic events affecting borrowers (inflation, wage hikes, layoffs)
+- GCash, Maya, Tonik, or other fintech news
+
+For each news item, provide:
+- headline: the news headline
+- summary: 1-2 sentence summary
+- score: relevance score 1-10 (10 = directly impacts Filipino borrowers, 1 = barely related)
+- event: short phrase describing the event (for use in article titles, e.g. "BSP Rate Cut", "New SSS Loan Rules")
+
+Return ONLY valid JSON array, no markdown fences:
+[{{"headline": "...", "summary": "...", "score": 8, "event": "..."}}]
+
+Return 3-5 news items. If you cannot find any recent relevant news, return an empty array: []"""
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2000},
+    }
+
+    GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    for model in GEMINI_MODELS:
+        model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        try:
+            resp = requests.post(model_url, json=payload, timeout=60)
+            if resp.status_code == 200:
+                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if text.startswith("```"):
+                    text = re.sub(r"^```(?:json)?\n?", "", text)
+                    text = re.sub(r"\n?```$", "", text)
+                news_items = json.loads(text)
+                if isinstance(news_items, list):
+                    # Validate and clamp scores
+                    valid = []
+                    for item in news_items:
+                        if all(k in item for k in ("headline", "summary", "score", "event")):
+                            item["score"] = max(1, min(10, int(item["score"])))
+                            valid.append(item)
+                    return valid
+        except (json.JSONDecodeError, KeyError, ValueError, requests.RequestException) as e:
+            print(f"  News scan failed with {model}: {e}")
+            continue
+    return []
+
+
+def _build_news_topic(news_item):
+    """Build a topic dict from a news item for news-based article generation."""
+    event = news_item["event"]
+    headline = news_item["headline"]
+    summary = news_item["summary"]
+
+    return {
+        "keyword": event.lower(),
+        "angle": f"news analysis: {summary}",
+        "category": "Financial News",
+        "img_query": "philippines finance news economy",
+        "data_points": (
+            f"NEWS: {headline}\n"
+            f"SUMMARY: {summary}\n"
+            "Connect this news to practical impact on Filipino borrowers. "
+            "Include relevant loan rates and options from existing data."
+        ),
+        "is_news": True,
+        "news_event": event,
+        "news_headline": headline,
+    }
+
+
+# ---------------------------------------------------------------------------
 # WordPress helpers
 # ---------------------------------------------------------------------------
 def get_existing_posts():
@@ -519,173 +521,51 @@ def get_existing_posts():
 
 
 def pick_topic(existing_titles):
-    """Pick a topic from the keyword matrix, avoiding recent duplicates."""
-    return generate_topic(existing_titles)
+    """Pick a topic using score-based news priority logic.
 
+    - If any news has score >= 8: prioritize news content
+    - If news score is 7-8: mix with SEO content (50/50)
+    - If no news score >= 7: use SEO keyword strategy
+    """
+    # Scan for news
+    print("Scanning for trending finance news...")
+    news_items = scan_news()
+    if news_items:
+        # Sort by score descending
+        news_items.sort(key=lambda x: x["score"], reverse=True)
+        top_score = news_items[0]["score"]
+        top_news = news_items[0]
+        print(f"  Top news: \"{top_news['event']}\" (score: {top_score})")
 
-# ---------------------------------------------------------------------------
-# News-Jacking SEO: Fetch PH news → score loan relevance → generate news article
-# ---------------------------------------------------------------------------
+        # Filter out news that overlaps with existing titles
+        unused_news = [
+            n for n in news_items
+            if not any(n["event"].lower() in t for t in existing_titles)
+        ]
 
-# Philippine news RSS feeds (financial, business, lifestyle)
-NEWS_RSS_FEEDS = [
-    "https://business.inquirer.net/feed",
-    "https://www.philstar.com/rss/business",
-    "https://www.bworldonline.com/feed",
-    "https://mb.com.ph/category/business/feed",
-    "https://news.abs-cbn.com/rss/business",
-    "https://www.rappler.com/money/feed",
-]
+        if unused_news:
+            top_score = unused_news[0]["score"]
+            top_news = unused_news[0]
 
-
-def fetch_ph_news(max_items=30):
-    """Fetch recent news from Philippine RSS feeds. Returns list of {title, summary, url, source}."""
-    import xml.etree.ElementTree as ET
-    from email.utils import parsedate_to_datetime
-
-    items = []
-    cutoff_hours = 48  # grab news from last 48 hours
-    now = datetime.now(timezone.utc)
-
-    for feed_url in NEWS_RSS_FEEDS:
-        source = feed_url.split("/")[2].replace("www.", "").replace("business.", "")
-        try:
-            resp = requests.get(feed_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
-            if resp.status_code != 200:
-                continue
-            root = ET.fromstring(resp.content)
-            channel = root.find("channel")
-            if channel is None:
-                continue
-            for item in channel.findall("item")[:10]:
-                title_el = item.find("title")
-                desc_el = item.find("description")
-                link_el = item.find("link")
-                pubdate_el = item.find("pubDate")
-                if title_el is None:
-                    continue
-                title = title_el.text or ""
-                summary = re.sub(r"<[^>]+>", "", (desc_el.text or "") if desc_el is not None else "")[:300]
-                url = link_el.text or "" if link_el is not None else ""
-                # Check recency
-                try:
-                    pub_dt = parsedate_to_datetime(pubdate_el.text) if pubdate_el is not None else None
-                    if pub_dt and (now - pub_dt).total_seconds() > cutoff_hours * 3600:
-                        continue
-                except Exception:
-                    pass
-                items.append({"title": title, "summary": summary, "url": url, "source": source})
-                if len(items) >= max_items:
-                    break
-        except Exception as e:
-            print(f"  RSS fetch failed ({source}): {e}")
-        if len(items) >= max_items:
-            break
-
-    print(f"  Fetched {len(items)} news items from {len(NEWS_RSS_FEEDS)} feeds")
-    return items
-
-
-def score_news_for_loan_angle(news_items):
-    """Use Gemini to score each news item for loan/credit relevance. Returns best item or None."""
-    if not news_items:
-        return None
-
-    news_list = "\n".join(
-        f"{i+1}. [{item['source']}] {item['title']} — {item['summary'][:150]}"
-        for i, item in enumerate(news_items[:20])
-    )
-
-    prompt = f"""You are an SEO strategist for a Philippine personal finance website (Credit Kaagapay).
-Review these recent Philippine news headlines and score each one (0-10) on how naturally it can be connected to a loan, credit score, or personal finance article.
-
-Scoring guide:
-- 9-10: Directly about loans, interest rates, BSP policy, SEC enforcement, digital lending, credit scores
-- 7-8: About economic hardship, job loss, inflation, OFW remittances, tuition, medical bills — easy to bridge to loans
-- 5-6: Business news, property, elections — possible but forced connection
-- 0-4: Sports, entertainment, crime, weather — very hard to connect naturally
-
-NEWS ITEMS:
-{news_list}
-
-Return ONLY valid JSON (no markdown):
-{{"best_index": <1-based index of highest scoring item, or 0 if none score >=7>,
-  "score": <score of best item>,
-  "loan_angle": "<one sentence: how to bridge this news to a loan/credit topic>",
-  "target_keyword": "<the most relevant loan keyword from this list: online loan philippines, personal loan philippines, emergency loan philippines, bad credit loan philippines, CIC credit report philippines, loan for unemployed philippines, cash loan philippines>"}}"""
-
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 500},
-    }
-
-    GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"]
-    for model in GEMINI_MODELS:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-        try:
-            resp = requests.post(url, json=payload, timeout=30)
-            if resp.status_code == 200:
-                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                text = re.sub(r"^```(?:json)?\n?", "", text)
-                text = re.sub(r"\n?```$", "", text)
-                result = json.loads(text)
-                idx = result.get("best_index", 0)
-                score = result.get("score", 0)
-                if idx > 0 and score >= 7 and idx <= len(news_items):
-                    chosen = news_items[idx - 1]
-                    chosen["loan_angle"] = result.get("loan_angle", "")
-                    chosen["target_keyword"] = result.get("target_keyword", "online loan philippines")
-                    print(f"  Best news item (score {score}/10): {chosen['title'][:80]}")
-                    print(f"  Loan angle: {chosen['loan_angle']}")
-                    return chosen
+            if top_score >= 8:
+                # High-relevance news: always use news
+                print(f"  Score >= 8 → using news article: {top_news['event']}")
+                return _build_news_topic(top_news)
+            elif top_score >= 7:
+                # Medium relevance: 50/50 mix
+                if random.random() < 0.5:
+                    print(f"  Score 7-8 → mixing: chose news article: {top_news['event']}")
+                    return _build_news_topic(top_news)
                 else:
-                    print(f"  No news item scored >=7 (best score: {score})")
-                    return None
-        except Exception as e:
-            print(f"  News scoring failed ({model}): {e}")
-    return None
-
-
-def build_news_topic(news_item):
-    """Build a topic dict from a news item for news-jacking article generation."""
-    keyword = news_item.get("target_keyword", "online loan philippines")
-    core = "loan"
-    for cw in sorted(CORE_WORDS, key=len, reverse=True):
-        if cw.lower() in keyword.lower():
-            core = cw
-            break
-    data_points = CATEGORY_DATA_POINTS.get(core, CATEGORY_DATA_POINTS["loan"])
-    img_query = IMG_QUERIES.get(core, "loan finance philippines")
-    category = CORE_CATEGORIES.get(core, "Loans")
-    return {
-        "keyword": keyword,
-        "angle": news_item.get("loan_angle", "practical guide with real bank rates"),
-        "category": category,
-        "img_query": img_query,
-        "data_points": data_points,
-        "news_title": news_item["title"],
-        "news_summary": news_item["summary"],
-        "news_url": news_item["url"],
-        "news_source": news_item["source"],
-        "is_news_jacking": True,
-    }
-
-
-def pick_topic_with_news(existing_titles):
-    """30% chance: use news-jacking strategy. 70%: use keyword matrix."""
-    use_news = random.random() < 0.30
-    if use_news:
-        print("[Strategy] Trying News-Jacking SEO (30% chance triggered)...")
-        news_items = fetch_ph_news()
-        if news_items:
-            best_news = score_news_for_loan_angle(news_items)
-            if best_news:
-                topic = build_news_topic(best_news)
-                print(f"[Strategy] ✓ News-jacking topic selected: {topic['keyword']}")
-                return topic
-        print("[Strategy] No suitable news found, falling back to keyword matrix")
+                    print(f"  Score 7-8 → mixing: chose SEO keyword article")
+            else:
+                print(f"  Score < 7 → using SEO keyword strategy")
+        else:
+            print("  All news topics already covered, using SEO keywords")
     else:
-        print("[Strategy] Using keyword matrix strategy (70% default)")
+        print("  No relevant news found, using SEO keywords")
+
+    # SEO keyword strategy
     return generate_topic(existing_titles)
 
 
@@ -939,24 +819,61 @@ Place the first image after the opening paragraph, distribute the rest evenly.""
     # Get current date for freshness signal
     current_date = datetime.now(timezone.utc).strftime("%B %Y")
 
-    # Build news context block if this is a news-jacking article
-    news_context = ""
-    if topic.get("is_news_jacking"):
-        news_context = f"""
-NEWS HOOK (use this real news event as your opening hook — summarize it in 1-2 sentences, then bridge to the loan topic):
-Headline: {topic.get('news_title', '')}
-Summary: {topic.get('news_summary', '')}
-Source: {topic.get('news_source', '')} ({topic.get('news_url', '')})
-Bridge angle: {topic.get('angle', '')}
+    # Build FAQ hints from templates
+    faq_hints = []
+    constraint = random.choice(TITLE_CONSTRAINTS)
+    for tmpl in random.sample(FAQ_TEMPLATES, 3):
+        faq_hints.append(tmpl.format(constraint=constraint, keyword=topic['keyword']))
+    faq_hint_text = "\n".join(f"  - {q}" for q in faq_hints)
 
-IMPORTANT: Start the article by referencing this real news event. Cite the source inline (e.g., "According to {topic.get('news_source', 'local reports')}..."). Then naturally transition to the loan/credit topic."""
+    # Build title rules based on article type (news vs SEO)
+    is_news = topic.get("is_news", False)
+    if is_news:
+        news_event = topic.get("news_event", "")
+        title_rules_section = f"""=== TITLE RULES (NEWS-STYLE — CRITICAL) ===
+
+This is a NEWS article about: {news_event}
+
+Generate a title that follows one of these patterns:
+- "What [event] Means for Borrowers in the Philippines"
+- "How [event] Affects Loan Access in the Philippines"
+- "[Event]: What It Means for People Who Need Loans"
+- "[Event] and What Filipino Borrowers Should Know"
+- "How [event] Could Change Lending in the Philippines"
+
+Title rules:
+- Keep it natural and news-like
+- Must include "Philippines"
+- Connect the event to borrowing, loans, or money problems
+- Keep under 70 characters
+- Do NOT use generic SEO keyword patterns — this is a news piece"""
+    else:
+        title_rules_section = """=== TITLE RULES (SEO — CRITICAL) ===
+
+Generate a title that follows one of these patterns:
+- "How to Get a Loan Without [constraint] in Philippines"
+- "Loan for [audience] Philippines"
+- "Best Loan Apps for [situation] Philippines"
+- "[amount] Peso Loan Without [constraint]"
+
+Parameter pools:
+  Constraints: no payslip, no valid id, no credit check
+  Audience: unemployed, student, first time borrower
+  Situations: emergency, instant, same day
+
+Title rules:
+- Must be natural and readable
+- Avoid generic keywords like "online loan philippines" as the full title
+- Focus on a specific user problem
+- Keep under 70 characters
+- Must be meaningfully different from common titles"""
 
     prompt = f"""You are a Filipino personal finance blogger writing for Credit Kaagapay (a free credit score & loan finder app). Write like a real person, not an AI.
 
 TOPIC: {topic['keyword']}
 ANGLE: {topic['angle']}
 CATEGORY: {topic['category']}
-DATE: {current_date}{news_context}
+DATE: {current_date}
 
 REAL DATA TO USE (weave these into the article naturally):
 {data_points}
@@ -964,6 +881,8 @@ REAL DATA TO USE (weave these into the article naturally):
 EXISTING ARTICLES FOR INTERNAL LINKS (link to 2-3 of these where relevant):
 {internal_links}
 {img_instructions}
+
+{title_rules_section}
 
 === SEO REQUIREMENTS (CRITICAL FOR RANKING) ===
 
@@ -1000,7 +919,13 @@ STRUCTURE:
 3. Key Takeaways box (styled div with "Updated {current_date}" badge + 4-5 bullet points)
 4. Main content in 3-4 sections with H2 headings (use keyword variants in headings)
 5. At least ONE comparison table (HTML <table>) with real numbers from named institutions
-6. FAQ section: 3 questions as H3 with "?" - answer in the next <p>
+6. FAQ section: EXACTLY 3 questions as H3 with "?" - answer in the next <p>. Use these as guidance:
+{faq_hint_text}
+   FAQ RULES:
+   - Questions MUST be relevant to the article topic
+   - Include the main keyword or a close variation in at least 2 questions
+   - Focus on real user concerns: approval chances, requirements, speed, safety
+   - Each question must address a different concern (do NOT repeat similar questions)
 7. STRONG CTA section with this exact HTML:
    <div style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;padding:24px;border-radius:12px;margin:24px 0;text-align:center;">
      <h3 style="color:#fff;margin:0 0 12px;">Before You Apply — Check Your Credit Score for FREE</h3>
@@ -1024,32 +949,9 @@ FORMATTING:
 
 LENGTH: 1500-1800 words. Every word must earn its place.
 
-TITLE GENERATION RULES (CRITICAL):
-First, check if the topic matches any of these user-problem patterns. If yes, use that title format. If no match, use a natural keyword-based title.
-
-Problem-oriented patterns (preferred when applicable):
-- "How to Get a Loan Without [constraint] in Philippines" (constraints: no payslip / no valid id / no credit check)
-- "Loan for [audience] Philippines" (audience: unemployed / student / first time borrower)
-- "Best Loan Apps for [situation] Philippines" (situations: emergency / instant / same day)
-- "[Amount] Peso Loan Without [constraint]" (e.g., ₱5,000 Peso Loan Without Payslip)
-
-Title rules:
-- Titles must be natural and readable — not keyword-stuffed
-- Avoid generic titles like "Online Loan Philippines Guide 2026"
-- Focus on the specific user problem in the topic
-- Keep titles under 70 characters if possible
-- Prioritize "how to" style titles when the topic is about overcoming a constraint
-- Never generate a title that duplicates an existing article
-
-FAQ SECTION RULES:
-The article MUST end with exactly these 3 FAQ questions (use these exact questions, write fresh answers that fit the article's specific topic):
-1. Can I get a loan without payslip in the Philippines?
-2. What is the fastest loan approval in the Philippines?
-3. Are there legit loan apps without credit check in the Philippines?
-
 OUTPUT (valid JSON only, no markdown fences):
 {{
-    "title": "problem-oriented or keyword-based title, under 70 chars",
+    "title": "under 60 chars, includes keyword, not clickbait",
     "meta_description": "under 155 chars, includes keyword, compelling",
     "excerpt": "2 sentences summarizing the key value",
     "content": "full HTML content",
@@ -1278,11 +1180,9 @@ def main():
     existing = get_existing_posts()
     print(f"Found {len(existing)} existing posts")
 
-    # Pick topic (30% news-jacking, 70% keyword matrix)
-    topic = pick_topic_with_news(existing)
+    # Pick topic
+    topic = pick_topic(existing)
     print(f"Selected topic: {topic['keyword']}")
-    if topic.get("is_news_jacking"):
-        print(f"[News-Jacking] Based on: {topic.get('news_title', 'N/A')[:80]}")
     print(f"Angle: {topic['angle']}")
     print(f"Category: {topic['category']}")
     print()
