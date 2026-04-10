@@ -422,7 +422,7 @@ def scan_news():
     current_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     prompt = f"""You are a Philippine financial news analyst. Today is {current_date}.
 
-Think of the most recent (last 7 days) news events in the Philippines related to:
+Think of the most recent (last 24 hours) news events in the Philippines related to:
 - Banking, lending, fintech, digital loans
 - BSP monetary policy, interest rate changes
 - SEC enforcement against illegal lenders
@@ -440,7 +440,7 @@ For each news item, provide:
 Return ONLY valid JSON array, no markdown fences:
 [{{"headline": "...", "summary": "...", "score": 8, "event": "..."}}]
 
-Return 3-5 news items. If you cannot find any recent relevant news, return an empty array: []"""
+Return 3-5 news items. If you cannot find any news from the last 24 hours, return an empty array: []"""
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
