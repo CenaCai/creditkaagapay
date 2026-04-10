@@ -33,73 +33,59 @@ AUTHOR_ROLE = "Marketing Manager at Credit Kaagapay"
 
 # Existing articles for internal linking
 EXISTING_ARTICLES = {
-    "credit score": "/the-ultimate-guide-to-credit-scores-in-the-philippines-2026/",
-    "CIC credit report": "/how-to-read-your-cic-credit-report-in-the-philippines-a-step-by-step-guide/",
-    "personal loan": "/personal-loan-philippines-best-options-smart-qualification/",
-    "credit card rewards": "/credit-card-rewards-philippines-maximize-your-perks/",
-    "credit score vs credit report": "/credit-score-vs-credit-report-in-the-philippines-whats-the-difference/",
-    "online lending scams": "/how-to-avoid-online-lending-scams-in-the-philippines-2026-complete-guide/",
-    "budgeting": "/cost-of-living-budgeting-why-its-the-top-priority-for-millennials-gen-z-living-paycheck-to-paycheck/",
-    "top credit cards": "/top-5-credit-cards-in-the-philippines-2025-lowest-rates-no-annual-fees-for-life-naffl/",
-    "online loan apps": "/deep-dive-into-the-philippines-top-online-loan-apps/",
+    "credit score": "/blog/ultimate-guide-credit-scores-philippines/",
+    "CIC credit report": "/blog/how-to-read-your-cic-credit-report-in-the-philippines/",
+    "personal loan": "/blog/personal-loan-philippines-best-options-smart-qualification/",
+    "credit card rewards": "/blog/credit-card-rewards-philippines-maximize-your-perks/",
+    "credit score vs credit report": "/blog/credit-score-vs-credit-report-in-the-philippines-whats-the-2/",
+    "online lending scams": "/blog/how-to-avoid-online-lending-scams-in-the-philippines-2026-complete-guide/",
+    "budgeting": "/blog/cost-of-living-budgeting-why-its-the-top-priority-for-millennials-gen-z-living-paycheck-to-paycheck/",
+    "top credit cards": "/blog/top-5-credit-cards-in-the-philippines-2025-lowest-rates-no-annual-fees-for-life-naffl/",
+    "online loan apps": "/blog/deep-dive-into-the-philippines-top-online-loan-apps/",
+    "improve credit score": "/blog/5-simple-habits-that-improve-your-credit-score/",
+    "cash loan manila": "/blog/cash-loan-manila-your-2026-guide-to-fast-fair-funds/",
+    "what is credit report": "/blog/what-is-a-credit-report-and-why-does-it-matter/",
+    "why good credit matters": "/blog/why-good-credit-matters/",
+    "personal loan vs credit card": "/blog/personal-loan-vs-credit-card-whats-right-for-you/",
 }
 
 
 # ---------------------------------------------------------------------------
-# Keyword Matrix System
-# (10 core) × (15 modifiers) × (10 audience) × (8 geo) = 12,000+ combos
+# 3-Tier Keyword System
+# Tier 1 (60%): Product-related  |  Tier 2 (30%): Traffic  |  Tier 3 (10%): Brand
 # ---------------------------------------------------------------------------
+TIER_1_KEYWORDS = [
+    "online loan philippines", "personal loan philippines", "cash loan philippines",
+    "CIC credit report philippines", "bad credit loan philippines", "emergency loan philippines",
+]
+
+TIER_2_KEYWORDS = [
+    "fast loan", "quick loan", "loan for unemployed", "OFW loan",
+    "online loan app", "loan calculator PH",
+]
+
+TIER_3_KEYWORDS = [
+    "salary loan", "credit score philippines", "student loan",
+]
+
 CORE_WORDS = [
-    "loan", "cash loan", "online loan", "quick loan", "fast loan",
-    "personal loan", "credit loan", "money loan", "salary loan", "emergency loan",
+    "cash loan", "online loan", "personal loan",
+    "salary loan", "emergency loan",
+    "credit loan", "money loan", "loan",
 ]
 
 MODIFIERS = [
-    "fast", "instant", "quick approval", "same day", "24 hours",
-    "low interest", "legit", "safe", "best", "top",
-    "easy approval", "no rejection", "guaranteed",
+    "fast", "instant", "low interest", "legit",
+    "best", "easy approval", "same day",
 ]
 
 AUDIENCE_WORDS = [
-    "no payslip", "unemployed", "with bad credit", "no credit history",
-    "self employed", "OFW", "student", "first time borrower", "low income",
+    "no payslip", "unemployed", "with bad credit",
+    "self employed", "OFW", "student",
 ]
 
 GEO_WORDS = [
-    "philippines", "manila", "makati", "cebu",
-    "davao", "quezon city", "pasig", "taguig",
-]
-
-# High-value keyword lists (priority selection)
-HIGH_TRAFFIC_KEYWORDS = [
-    "online loan philippines", "fast loan philippines", "cash loan philippines",
-    "personal loan philippines", "loan app philippines", "quick cash loan",
-    "instant loan approval", "emergency loan philippines",
-]
-
-HIGH_CONVERSION_KEYWORDS = [
-    "loan no payslip philippines", "loan for unemployed philippines",
-    "loan with bad credit philippines", "instant cash loan same day",
-    "loan easy approval no documents", "guaranteed loan approval philippines",
-    "loan for OFW philippines", "loan for students philippines",
-]
-
-GEO_KEYWORDS = [
-    "cash loan manila", "personal loan cebu", "loan app makati",
-    "fast loan davao", "emergency loan quezon city",
-    "online loan pasig", "salary loan taguig",
-]
-
-APP_COMPETITOR_KEYWORDS = [
-    "best loan app 2026 philippines", "legit loan app no rejection",
-    "loan app low interest rate", "loan app instant approval philippines",
-    "tala vs cashalo vs tonik 2026",
-]
-
-COMPARISON_KEYWORDS = [
-    "SSS loan vs Pag-IBIG loan", "bank loan vs online loan philippines",
-    "credit card vs personal loan philippines",
-    "GCash GLoan vs Maya Credit 2026",
+    "philippines", "manila", "cebu", "davao",
 ]
 
 # ---------------------------------------------------------------------------
@@ -291,41 +277,49 @@ def _generate_title_from_pattern(existing_titles):
     return None
 
 
+def _is_topic_duplicate(keyword, existing_titles):
+    """Check if keyword is too similar to any existing title (70% word overlap)."""
+    kw_words = set(keyword.lower().split())
+    for title in existing_titles:
+        title_words = set(title.split())
+        if not kw_words or not title_words:
+            continue
+        overlap = len(kw_words & title_words) / max(len(kw_words), 1)
+        if overlap >= 0.7:
+            return True
+        if keyword.lower() in title or title in keyword.lower():
+            return True
+    return False
+
+
 def generate_topic(existing_titles):
-    """Generate a topic from the keyword matrix, prioritizing high-value keywords."""
+    """Generate a topic using 3-tier keyword system (60/30/10)."""
 
-    # Priority tiers: try high-value keywords first, then matrix combos
-    priority_pools = [
-        HIGH_TRAFFIC_KEYWORDS,
-        HIGH_CONVERSION_KEYWORDS,
-        CREDIT_KEYWORDS,
-        COMPARISON_KEYWORDS,
-        APP_COMPETITOR_KEYWORDS,
-        GEO_KEYWORDS,
-    ]
-
-    # 40% title patterns, 35% priority pools, 25% matrix generator
+    # 40% title patterns, 36% tier keywords, 24% matrix generator
     roll = random.random()
 
-    # Tier 1: Long-tail title patterns (40%)
+    # Tier A: Long-tail title patterns (40%)
     if roll < 0.4:
         title_kw = _generate_title_from_pattern(existing_titles)
         if title_kw:
             return _build_topic_from_keyword(title_kw)
 
-    # Tier 2: Priority keyword pools (35%)
-    if roll < 0.75:
-        all_priority = []
-        for pool in priority_pools:
-            all_priority.extend(pool)
-        random.shuffle(all_priority)
+    # Tier B: 3-tier keyword selection (36%)
+    if roll < 0.76:
+        tier_roll = random.random()
+        if tier_roll < 0.6:
+            tier_keywords = TIER_1_KEYWORDS[:]
+        elif tier_roll < 0.9:
+            tier_keywords = TIER_2_KEYWORDS[:]
+        else:
+            tier_keywords = TIER_3_KEYWORDS[:]
 
-        for kw in all_priority:
-            kw_lower = kw.lower()
-            if not any(kw_lower in title for title in existing_titles):
+        random.shuffle(tier_keywords)
+        for kw in tier_keywords:
+            if not _is_topic_duplicate(kw, existing_titles):
                 return _build_topic_from_keyword(kw)
 
-    # Tier 3: Matrix combination (25%)
+    # Tier C: Matrix combination (24%)
     attempts = 0
     while attempts < 50:
         core = random.choice(CORE_WORDS)
@@ -335,13 +329,12 @@ def generate_topic(existing_titles):
 
         keyword = f"{modifier} {core} {audience} {geo}"
 
-        kw_lower = keyword.lower()
-        if not any(kw_lower in title for title in existing_titles):
+        if not _is_topic_duplicate(keyword, existing_titles):
             return _build_topic_from_keyword(keyword, core=core, audience=audience, geo=geo)
 
         attempts += 1
 
-    # Fallback: try title pattern, then random matrix combo
+    # Fallback
     title_kw = _generate_title_from_pattern(existing_titles)
     if title_kw:
         return _build_topic_from_keyword(title_kw)
@@ -454,7 +447,7 @@ Return 3-5 news items. If you cannot find any recent relevant news, return an em
         "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2000},
     }
 
-    GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
     for model in GEMINI_MODELS:
         model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
         try:
@@ -510,7 +503,7 @@ def get_existing_posts():
     try:
         resp = requests.get(
             f"{WP_API}/posts",
-            params={"per_page": 50, "status": "publish"},
+            params={"per_page": 100, "status": "publish"},
             timeout=30,
         )
         if resp.status_code == 200:
@@ -930,7 +923,7 @@ STRUCTURE:
    <div style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;padding:24px;border-radius:12px;margin:24px 0;text-align:center;">
      <h3 style="color:#fff;margin:0 0 12px;">Before You Apply — Check Your Credit Score for FREE</h3>
      <p style="margin:0 0 16px;">Don't get rejected. Know your CIC credit score first with Credit Kaagapay — 100% free, no hidden fees.</p>
-     <a href="https://www.creditkaagapay.com/" style="background:#fff;color:#2563eb;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">Check My Credit Score Now</a>
+     <a href="https://play.google.com/store/apps/details?id=com.credit.kaagapay.ph" style="background:#fff;color:#2563eb;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">Check My Credit Score Now</a>
    </div>
 8. SEC compliance disclaimer (see E-E-A-T section above)
 
@@ -962,7 +955,7 @@ OUTPUT (valid JSON only, no markdown fences):
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
-            "temperature": 0.9,
+            "temperature": 0.7,
             "maxOutputTokens": 12000,
         },
     }
@@ -1021,17 +1014,6 @@ OUTPUT (valid JSON only, no markdown fences):
     if faq_schema:
         content += faq_schema
         print("  FAQ Schema generated")
-
-    # Generate and append Article schema
-    featured_url = image_data[0]["url"] if image_data else None
-    article_schema = generate_article_schema(
-        title=article.get("title", ""),
-        excerpt=article.get("excerpt", ""),
-        keyword=topic["keyword"],
-        image_url=featured_url,
-    )
-    content += article_schema
-    print("  Article Schema generated")
 
     article["content"] = content
     return article
@@ -1099,6 +1081,51 @@ def get_or_create_tags(tag_names):
                 tag_ids.append(resp.json()["id"])
 
     return tag_ids
+
+
+def validate_article(article, topic):
+    """Validate article quality before publishing. Returns (ok, issues)."""
+    issues = []
+    content = article.get("content", "")
+    title = article.get("title", "")
+    keyword = topic.get("keyword", "")
+
+    plain_text = re.sub(r"<[^>]+>", " ", content)
+    plain_text = re.sub(r"\s+", " ", plain_text).strip()
+    word_count = len(plain_text.split())
+
+    if word_count < 800:
+        issues.append(f"Too thin: {word_count} words (minimum 800)")
+    if len(title) > 70:
+        issues.append(f"Title too long: {len(title)} chars (max 70)")
+    if len(title) < 20:
+        issues.append(f"Title too short: {len(title)} chars (min 20)")
+
+    digit_ratio = sum(c.isdigit() for c in title) / max(len(title), 1)
+    if digit_ratio > 0.3:
+        issues.append(f"Title has too many digits ({digit_ratio:.0%})")
+
+    if keyword.lower() not in plain_text.lower():
+        issues.append(f"Focus keyword '{keyword}' not found in article body")
+
+    h2_count = len(re.findall(r"<h2", content, re.IGNORECASE))
+    if h2_count < 2:
+        issues.append(f"Only {h2_count} H2 headings (minimum 2)")
+
+    meta_desc = article.get("meta_description", "")
+    if len(meta_desc) > 160:
+        issues.append(f"Meta description too long: {len(meta_desc)} chars")
+    if len(meta_desc) < 50:
+        issues.append(f"Meta description too short: {len(meta_desc)} chars")
+
+    ph_terms = ["philippines", "filipino", "peso", "₱", "bsp", "cic", "sec.gov.ph",
+                 "bpi", "bdo", "metrobank", "gcash", "maya", "sss", "pag-ibig"]
+    has_ph_context = any(term in plain_text.lower() for term in ph_terms)
+    if not has_ph_context:
+        issues.append("No Philippines-specific context found in article")
+
+    ok = len(issues) == 0
+    return ok, issues
 
 
 def publish_post(article, topic, featured_image_id=None):
@@ -1208,6 +1235,17 @@ def main():
 
     # Publish
     featured_id = image_data[0]["id"] if image_data else None
+
+    # Validate article quality before publishing
+    ok, issues = validate_article(article, topic)
+    if not ok:
+        print("Article quality check FAILED:")
+        for issue in issues:
+            print(f"  ✗ {issue}")
+        print("Publishing anyway with warnings...")
+    else:
+        print("Article quality check passed ✓")
+
     print("Publishing to WordPress...")
     post_id, post_url = publish_post(article, topic, featured_image_id=featured_id)
     print()
