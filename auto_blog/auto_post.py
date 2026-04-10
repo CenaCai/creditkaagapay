@@ -964,7 +964,7 @@ OUTPUT (valid JSON only, no markdown fences):
     GEMINI_MODELS = [
         "gemini-2.5-flash",
         "gemini-2.0-flash",
-        "gemini-1.5-flash",
+        "gemini-2.0-flash-lite",
     ]
     resp = None
     for model in GEMINI_MODELS:
