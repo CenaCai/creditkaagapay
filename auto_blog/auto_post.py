@@ -447,7 +447,7 @@ Return 3-5 news items. If you cannot find any news from the last 24 hours, retur
         "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2000},
     }
 
-    GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"]
+    GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
     for model in GEMINI_MODELS:
         model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
         try:
@@ -965,7 +965,6 @@ OUTPUT (valid JSON only, no markdown fences):
         "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
-        "gemini-1.5-flash",
     ]
     resp = None
     for model in GEMINI_MODELS:
