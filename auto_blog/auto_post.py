@@ -966,42 +966,83 @@ OUTPUT (valid JSON only, no markdown fences):
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
     ]
-    resp = None
-    for model in GEMINI_MODELS:
-        model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-        print(f"  Trying model: {model}")
-        for attempt in range(3):
-            resp = requests.post(model_url, json=payload, timeout=120)
-            if resp.status_code == 200:
-                print(f"  ✓ Success with {model}")
-                break
-            elif resp.status_code == 429:
-                wait = 30 * (attempt + 1)
-                print(f"  Rate limited on {model}, waiting {wait}s (attempt {attempt + 1}/3)...")
-                time.sleep(wait)
-            elif resp.status_code in (503, 500, 404):
-                print(f"  {model} unavailable ({resp.status_code}): {resp.text[:200]}")
-                break  # Try next model immediately
-            else:
-                print(f"  Gemini API error {resp.status_code}: {resp.text[:300]}")
-                if attempt == 2:
+
+    article = None
+    for json_retry in range(3):  # Retry up to 3 times for JSON errors
+        if json_retry > 0:
+            print(f"\n  Retrying generation (attempt {json_retry + 1}/3) due to JSON error...")
+
+        resp = None
+        for model in GEMINI_MODELS:
+            model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            print(f"  Trying model: {model}")
+            for attempt in range(3):
+                resp = requests.post(model_url, json=payload, timeout=120)
+                if resp.status_code == 200:
+                    print(f"  ✓ Success with {model}")
                     break
-                time.sleep(10)
-        if resp and resp.status_code == 200:
-            break
-    if not resp or resp.status_code != 200:
-        print(f"  All Gemini models failed. Last error: {resp.status_code if resp else 'no response'}")
+                elif resp.status_code == 429:
+                    wait = 30 * (attempt + 1)
+                    print(f"  Rate limited on {model}, waiting {wait}s (attempt {attempt + 1}/3)...")
+                    time.sleep(wait)
+                elif resp.status_code in (503, 500, 404):
+                    print(f"  {model} unavailable ({resp.status_code}): {resp.text[:200]}")
+                    break  # Try next model immediately
+                else:
+                    print(f"  Gemini API error {resp.status_code}: {resp.text[:300]}")
+                    if attempt == 2:
+                        break
+                    time.sleep(10)
+            if resp and resp.status_code == 200:
+                break
+        if not resp or resp.status_code != 200:
+            print(f"  All Gemini models failed. Last error: {resp.status_code if resp else 'no response'}")
+            sys.exit(1)
+
+        data = resp.json()
+        text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+        # Clean up potential markdown code fences
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\n?", "", text)
+            text = re.sub(r"\n?```$", "", text)
+
+        # Robust JSON parsing with repair attempts
+        try:
+            article = json.loads(text)
+            break  # Success
+        except json.JSONDecodeError as e:
+            print(f"  JSON parse failed: {e}")
+            # Attempt repairs: trailing commas, truncated JSON, unescaped newlines
+            repaired = text
+            repaired = re.sub(r",\s*([}\]])", r"\1", repaired)
+            repaired = re.sub(r'(?<!\\)\n', r'\\n', repaired)
+            try:
+                article = json.loads(repaired)
+                print("  ✓ JSON repaired successfully")
+                break  # Success after repair
+            except json.JSONDecodeError:
+                open_braces = repaired.count("{") - repaired.count("}")
+                open_brackets = repaired.count("[") - repaired.count("]")
+                if open_braces > 0 or open_brackets > 0:
+                    last_quote = repaired.rfind('"')
+                    if last_quote > 0:
+                        repaired = repaired[:last_quote + 1]
+                    repaired += "}" * open_braces + "]" * open_brackets
+                    try:
+                        article = json.loads(repaired)
+                        print("  ✓ JSON repaired (closed truncated braces)")
+                        break  # Success after brace repair
+                    except json.JSONDecodeError:
+                        print(f"  ✗ JSON repair failed (attempt {json_retry + 1}/3)")
+                        continue  # Retry generation
+                else:
+                    print(f"  ✗ JSON repair failed (attempt {json_retry + 1}/3)")
+                    continue  # Retry generation
+
+    if article is None:
+        print("  ✗ All JSON parse attempts failed")
         sys.exit(1)
-
-    data = resp.json()
-    text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-    # Clean up potential markdown code fences
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\n?", "", text)
-        text = re.sub(r"\n?```$", "", text)
-
-    article = json.loads(text)
 
     # Post-processing
     content = article.get("content", "")
