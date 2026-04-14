@@ -976,23 +976,27 @@ OUTPUT (valid JSON only, no markdown fences):
         for model in GEMINI_MODELS:
             model_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
             print(f"  Trying model: {model}")
-            for attempt in range(3):
+            for attempt in range(5):
                 resp = requests.post(model_url, json=payload, timeout=120)
                 if resp.status_code == 200:
                     print(f"  ✓ Success with {model}")
                     break
                 elif resp.status_code == 429:
-                    wait = 30 * (attempt + 1)
-                    print(f"  Rate limited on {model}, waiting {wait}s (attempt {attempt + 1}/3)...")
+                    wait = 60 * (attempt + 1)
+                    print(f"  Rate limited on {model}, waiting {wait}s (attempt {attempt + 1}/5)...")
                     time.sleep(wait)
-                elif resp.status_code in (503, 500, 404):
-                    print(f"  {model} unavailable ({resp.status_code}): {resp.text[:200]}")
+                elif resp.status_code in (503, 500):
+                    wait = 60 * (attempt + 1)
+                    print(f"  {model} unavailable ({resp.status_code}), waiting {wait}s (attempt {attempt + 1}/5)...")
+                    time.sleep(wait)
+                elif resp.status_code == 404:
+                    print(f"  {model} not found (404), skipping")
                     break  # Try next model immediately
                 else:
                     print(f"  Gemini API error {resp.status_code}: {resp.text[:300]}")
-                    if attempt == 2:
+                    if attempt == 4:
                         break
-                    time.sleep(10)
+                    time.sleep(30)
             if resp and resp.status_code == 200:
                 break
         if not resp or resp.status_code != 200:
