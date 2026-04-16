@@ -28,8 +28,8 @@ PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 PEXELS_API = "https://api.pexels.com/v1"
 
 # Author info (E-E-A-T)
-AUTHOR_NAME = "Tan, Erika Trizia"
-AUTHOR_ROLE = "Marketing Manager at Credit Kaagapay"
+AUTHOR_NAME = "Zia Tan"
+AUTHOR_ROLE = "Philippines Fintech Industry Analyst at Credit Kaagapay"
 
 # Existing articles for internal linking
 EXISTING_ARTICLES = {
