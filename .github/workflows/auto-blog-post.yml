@@ -2,10 +2,13 @@ name: Auto Blog Post
 
 on:
   schedule:
-    - cron: '0 1 * * *'   # 09:00 PHT (01:00 UTC)
-    - cron: '0 4 * * *'   # 12:00 PHT (04:00 UTC)
-    - cron: '0 12 * * *'  # 20:00 PHT (12:00 UTC)
-  workflow_dispatch: #允许手动触发
+    - cron: '0 1 * * *'   # 09:00 PHT (01:00 UTC) - 主要发布
+    - cron: '0 4 * * *'   # 12:00 PHT (04:00 UTC) - 主要发布
+    - cron: '0 12 * * *'  # 20:00 PHT (12:00 UTC) - 主要发布
+    - cron: '0 2 * * *'   # 10:00 PHT (02:00 UTC) - 自检补发 (第一次发布后1小时)
+    - cron: '0 5 * * *'   # 13:00 PHT (05:00 UTC) - 自检补发 (第二次发布后1小时)
+    - cron: '0 13 * * *'  # 21:00 PHT (13:00 UTC) - 自检补发 (第三次发布后1小时)
+  workflow_dispatch:      # 支持手动触发
 
 permissions:
   contents: read
@@ -15,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -26,10 +29,102 @@ jobs:
       - name: Install dependencies
         run: pip install -r auto_blog/requirements.txt
 
+      - name: Check today's publications
+        id: check_publications
+        run: |
+          python3 << 'PYTHON_EOF'
+          import json
+          import requests
+          from datetime import datetime
+          
+          # 获取当前日期（UTC）
+          today = datetime.utcnow().strftime('%Y-%m-%d')
+          
+          print(f"📅 检查日期: {today}")
+          
+          # 调用 WordPress REST API 获取最近的文章
+          try:
+              response = requests.get(
+                  'https://www.creditkaagapay.com/wp-json/wp/v2/posts',
+                  params={'per_page': 50, 'orderby': 'date', 'order': 'desc'},
+                  timeout=10
+              )
+              
+              if response.status_code != 200:
+                  print(f"❌ API 返回错误: {response.status_code}")
+                  print("::set-output name=today_count::0")
+                  print("::set-output name=needs_retry::true")
+                  exit(0)
+              
+              posts = response.json()
+              today_count = 0
+              
+              for post in posts:
+                  post_date = post['date'][:10]
+                  if post_date == today:
+                      today_count += 1
+              
+              print(f"📊 {today} 已发布: {today_count} 篇")
+              
+              # 如果今天发布数少于 3 篇，标记为需要重试
+              needs_retry = today_count < 3
+              
+              print(f"::set-output name=today_count::{today_count}")
+              print(f"::set-output name=needs_retry::{str(needs_retry).lower()}")
+              
+              if needs_retry:
+                  print(f"⚠️  需要补发 {3 - today_count} 篇文章")
+              else:
+                  print(f"✅ 今天的发布任务已完成")
+          
+          except Exception as e:
+              print(f"❌ 检查失败: {str(e)}")
+              print("::set-output name=today_count::0")
+              print("::set-output name=needs_retry::true")
+          PYTHON_EOF
+
       - name: Generate and publish article
+        if: steps.check_publications.outputs.needs_retry == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           WP_USERNAME: ${{ secrets.WP_USERNAME }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-        run: python auto_blog/auto_post.py
+        run: |
+          echo "🚀 开始发布文章..."
+          echo "当前发布数: ${{ steps.check_publications.outputs.today_count }}"
+          python auto_blog/auto_post.py
+
+      - name: Skip if already published
+        if: steps.check_publications.outputs.needs_retry == 'false'
+        run: |
+          echo "✅ 今天的文章已全部发布 (${{ steps.check_publications.outputs.today_count }}/3)"
+          echo "跳过本次运行"
+
+      - name: Notify on check failure
+        if: failure() && steps.check_publications.outcome == 'failure'
+        run: |
+          echo "⚠️  自检步骤失败，但仍然尝试发布"
+          echo "这可能是因为 WordPress API 暂时无法访问"
+
+      - name: Commit changes
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Auto: Update blog and reports - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          git push || true
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ 工作流执行成功"
+          echo "发布数: ${{ steps.check_publications.outputs.today_count }}/3"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ 工作流执行失败"
+          echo "请检查日志获取详细信息"
+          exit 1
