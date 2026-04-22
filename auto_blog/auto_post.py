@@ -957,6 +957,42 @@ def main():
     print(f"\n📤 Publishing to WordPress...")
     auth = (WP_USERNAME, WP_APP_PASSWORD)
     
+    # Convert tag names to tag IDs (WordPress REST API requires integer IDs)
+    tag_names = article.get("tags", [])
+    tag_ids = []
+    for tag_name in tag_names:
+        if isinstance(tag_name, int):
+            tag_ids.append(tag_name)
+            continue
+        if not isinstance(tag_name, str) or not tag_name.strip():
+            continue
+        try:
+            # Search for existing tag
+            search_resp = requests.get(
+                f"{WP_API}/tags",
+                params={"search": tag_name.strip(), "per_page": 1},
+                auth=auth,
+                timeout=15,
+            )
+            if search_resp.status_code == 200 and search_resp.json():
+                tag_ids.append(search_resp.json()[0]["id"])
+            else:
+                # Create new tag
+                create_resp = requests.post(
+                    f"{WP_API}/tags",
+                    json={"name": tag_name.strip()},
+                    auth=auth,
+                    timeout=15,
+                )
+                if create_resp.status_code == 201:
+                    tag_ids.append(create_resp.json()["id"])
+                else:
+                    print(f"  ⚠️ Could not create tag '{tag_name}': {create_resp.status_code}")
+        except Exception as e:
+            print(f"  ⚠️ Tag lookup/create error for '{tag_name}': {e}")
+    
+    print(f"  📌 Resolved {len(tag_ids)} tag IDs from {len(tag_names)} tag names")
+    
     post_data = {
         "title": article["title"],
         "content": article["content"],
@@ -964,7 +1000,7 @@ def main():
         "meta_description": article.get("meta_description", ""),
         "status": "publish",
         "categories": [1],  # Default category
-        "tags": article.get("tags", []),
+        "tags": tag_ids,
     }
     
     try:
