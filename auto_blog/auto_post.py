@@ -993,6 +993,12 @@ def main():
     
     print(f"  📌 Resolved {len(tag_ids)} tag IDs from {len(tag_names)} tag names")
     
+    # Set featured image (use the first uploaded image)
+    featured_media_id = 0
+    if image_data and len(image_data) > 0:
+        featured_media_id = image_data[0]["id"]
+        print(f"  🖼️ Setting featured image: media ID {featured_media_id}")
+    
     post_data = {
         "title": article["title"],
         "content": article["content"],
@@ -1002,6 +1008,9 @@ def main():
         "categories": [1],  # Default category
         "tags": tag_ids,
     }
+    
+    if featured_media_id:
+        post_data["featured_media"] = featured_media_id
     
     try:
         resp = requests.post(
