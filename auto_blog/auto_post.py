@@ -517,24 +517,64 @@ def _build_news_topic(news_item):
 # ---------------------------------------------------------------------------
 # WordPress helpers
 # ---------------------------------------------------------------------------
-def search_pexels_images(query, count=3):
-    """Search Pexels for images matching the query."""
+def _load_used_images():
+    """Load set of previously used Pexels image IDs."""
+    path = os.path.join(os.path.dirname(__file__), "used_images.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                return set(json.load(f))
+        except Exception:
+            pass
+    return set()
+
+
+def _save_used_images(used_ids):
+    """Save used Pexels image IDs. Keep last 500 to avoid unbounded growth."""
+    path = os.path.join(os.path.dirname(__file__), "used_images.json")
+    ids_list = list(used_ids)
+    if len(ids_list) > 500:
+        ids_list = ids_list[-500:]
+    with open(path, "w") as f:
+        json.dump(ids_list, f)
+
+
+def search_pexels_images(query, count=3, exclude_ids=None):
+    """Search Pexels for images, randomizing pages and excluding used IDs."""
     if not PEXELS_API_KEY:
         print("  Warning: PEXELS_API_KEY not set, skipping image search")
         return []
 
-    try:
-        resp = requests.get(
-            f"{PEXELS_API}/search",
-            params={"query": query, "per_page": count, "page": 1},
-            headers={"Authorization": PEXELS_API_KEY},
-            timeout=30,
-        )
-        if resp.status_code == 200:
-            return resp.json().get("photos", [])
-    except Exception as e:
-        print(f"  Pexels search failed: {e}")
-    return []
+    exclude_ids = exclude_ids or set()
+    candidates = []
+    # Try multiple random pages to find fresh images
+    pages_to_try = random.sample(range(1, 15), min(5, 14))
+
+    for page_num in pages_to_try:
+        if len(candidates) >= count:
+            break
+        try:
+            resp = requests.get(
+                f"{PEXELS_API}/search",
+                params={"query": query, "per_page": 15, "page": page_num},
+                headers={"Authorization": PEXELS_API_KEY},
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                photos = resp.json().get("photos", [])
+                for photo in photos:
+                    pid = photo.get("id")
+                    if pid and pid not in exclude_ids:
+                        candidates.append(photo)
+                        exclude_ids.add(pid)
+                    if len(candidates) >= count * 2:
+                        break
+        except Exception as e:
+            print(f"  Pexels search page {page_num} failed: {e}")
+
+    # Shuffle and return requested count
+    random.shuffle(candidates)
+    return candidates[:count]
 
 
 def download_and_strip_image(photo_url):
@@ -608,16 +648,19 @@ def upload_to_wordpress(img_bytes, filename, alt_text, content_type="image/jpeg"
 
 def fetch_and_upload_images(query, keyword, count=3):
     """Search, download, clean, and upload images. Returns list of (id, url, alt)."""
-    photos = search_pexels_images(query, count)
+    used_ids = _load_used_images()
+    photos = search_pexels_images(query, count, exclude_ids=used_ids.copy())
     results = []
+    newly_used = []
 
     for i, photo in enumerate(photos):
         # Use medium size (good quality, reasonable file size)
         photo_url = photo.get("src", {}).get("large", photo.get("src", {}).get("original", ""))
         photographer = photo.get("photographer", "Pexels")
+        pexels_id = photo.get("id")
         alt_text = f"{keyword} in the Philippines - Photo by {photographer} on Pexels"
 
-        print(f"  Downloading image {i + 1}/{len(photos)} from Pexels...")
+        print(f"  Downloading image {i + 1}/{len(photos)} from Pexels (ID: {pexels_id})...")
         img_bytes, content_type = download_and_strip_image(photo_url)
         if not img_bytes:
             continue
@@ -632,6 +675,14 @@ def fetch_and_upload_images(query, keyword, count=3):
         if media_id:
             results.append({"id": media_id, "url": media_url, "alt": alt_text, "photographer": photographer})
             print(f"  Uploaded: {media_url}")
+            if pexels_id:
+                newly_used.append(pexels_id)
+
+    # Save newly used image IDs
+    if newly_used:
+        used_ids.update(newly_used)
+        _save_used_images(used_ids)
+        print(f"  Tracked {len(newly_used)} new image IDs (total: {len(used_ids)})")
 
     return results
 
