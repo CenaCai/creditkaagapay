@@ -19,7 +19,7 @@ import re
 import time
 import io
 import requests
-from datetime import datetime, timezone{{file_content}}
+from datetime import datetime, timezone
 
 # ---------------------------------------------------------------------------
 # Configuration
