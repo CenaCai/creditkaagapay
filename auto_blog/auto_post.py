@@ -992,6 +992,88 @@ OUTPUT (valid JSON only, no markdown fences):
 # ---------------------------------------------------------------------------
 # Main workflow
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Auto-categorization for new posts
+# ---------------------------------------------------------------------------
+CATEGORY_MAP = {
+    "loan_guides": 312,
+    "credit_score": 317,
+    "loan_comparisons": 316,
+    "financial_planning": 158,
+    "regulatory": 313,
+    "tools_calc": 315,
+    "news_updates": 314,
+}
+
+
+def classify_category(title, keyword=""):
+    """Classify a post into one of 7 categories based on title and keyword."""
+    t = (title + " " + keyword).lower()
+
+    # Credit Score & Reports
+    if any(kw in t for kw in [
+        "credit score", "credit report", "cic", "credit rating",
+        "credit history", "boost your credit", "bad credit",
+        "good credit", "credit scoring", "credit matters",
+        "cost of bad credit",
+    ]):
+        return CATEGORY_MAP["credit_score"]
+
+    # Regulatory & Policy
+    if any(kw in t for kw in [
+        "sec ", "sec cracks", "sec warning", "sec crackdown",
+        "sec illegal", "sec lending", "bsp ", "bsp holds",
+        "bsp rate", "bsp policy", "bsp inflation",
+        "pag-ibig", "sss ",
+    ]):
+        return CATEGORY_MAP["regulatory"]
+
+    # Tools & Calculators
+    if any(kw in t for kw in [
+        "calculator", "loan calculator",
+        "financial management app",
+    ]):
+        return CATEGORY_MAP["tools_calc"]
+
+    # Loan Comparisons
+    if any(kw in t for kw in [
+        " vs ", "vs.", "versus", "comparison", "compare",
+        "best loan app", "best online loan", "top 5 credit",
+        "swipe or sign", "credit card vs",
+    ]):
+        return CATEGORY_MAP["loan_comparisons"]
+
+    # News & Updates
+    if any(kw in t for kw in [
+        "gcash", "maya ", "gloan", "fintech",
+        "digital trust", "manila fintech", "gen z", "transunion",
+    ]):
+        return CATEGORY_MAP["news_updates"]
+
+    # Financial Planning
+    if any(kw in t for kw in [
+        "financial planning", "budgeting", "emergency fund",
+        "save for", "debt management", "money myths",
+        "50/30/20", "upskilling", "cost of living",
+        "retiree", "financial future", "financial security",
+        "financial mobility",
+    ]):
+        return CATEGORY_MAP["financial_planning"]
+
+    # Loan Guides (default for loan-related content)
+    if any(kw in t for kw in [
+        "loan", "cash loan", "personal loan", "emergency loan",
+        "ofw", "quick cash", "instant cash", "fast loan",
+        "same day", "first time borrower", "unemployed",
+        "no payslip", "without payslip", "low interest",
+        "guaranteed approval", "lending", "borrower", "pera",
+    ]):
+        return CATEGORY_MAP["loan_guides"]
+
+    # Fallback to Loan Guides (most content is loan-related)
+    return CATEGORY_MAP["loan_guides"]
+
+
 def main():
     """Main workflow: select topic, generate article, upload images, publish to WordPress."""
     print("\n" + "="*70)
@@ -1102,7 +1184,7 @@ def main():
         "excerpt": article["excerpt"],
         "meta_description": article.get("meta_description", ""),
         "status": "publish",
-        "categories": [1],  # Default category
+        "categories": [classify_category(article["title"], topic.get("keyword", ""))],  # Auto-categorized
         "tags": tag_ids,
     }
     
