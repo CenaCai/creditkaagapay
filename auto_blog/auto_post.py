@@ -31,6 +31,8 @@ WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
+FB_PAGE_ACCESS_TOKEN = os.environ.get("FB_PAGE_ACCESS_TOKEN", "")
+FB_PAGE_ID = os.environ.get("FB_PAGE_ID", "")
 
 PEXELS_API = "https://api.pexels.com/v1"
 
@@ -1074,6 +1076,56 @@ def classify_category(title, keyword=""):
     return CATEGORY_MAP["loan_guides"]
 
 
+def post_to_facebook(title: str, url: str, excerpt: str = "") -> bool:
+    """
+    Post article to Facebook Page.
+    Returns True if successful, False otherwise.
+    """
+    if not FB_PAGE_ACCESS_TOKEN or not FB_PAGE_ID:
+        print("  ⚠️  Facebook credentials not set - skipping Facebook post")
+        return False
+    
+    # Build post message
+    message_parts = [f"📝 {title}"]
+    
+    if excerpt:
+        # Clean and truncate excerpt
+        clean_excerpt = excerpt.strip()[:200]
+        if len(excerpt) > 200:
+            clean_excerpt += "..."
+        message_parts.append(f"\n{clean_excerpt}")
+    
+    message_parts.append(f"\n🔗 Read more: {url}")
+    message_parts.append("\n#Philippines #Loan #FinanceTips #CreditKaagapay")
+    
+    message = "\n".join(message_parts)
+    
+    try:
+        resp = requests.post(
+            f"https://graph.facebook.com/{FB_PAGE_ID}/feed",
+            data={
+                "message": message,
+                "link": url,
+                "access_token": FB_PAGE_ACCESS_TOKEN
+            },
+            timeout=30
+        )
+        
+        result = resp.json()
+        
+        if "id" in result:
+            print(f"  ✅ Shared to Facebook! Post ID: {result['id']}")
+            return True
+        else:
+            error_msg = result.get("error", {}).get("message", "Unknown error")
+            print(f"  ❌ Facebook post failed: {error_msg}")
+            return False
+    
+    except Exception as e:
+        print(f"  ❌ Facebook post error: {e}")
+        return False
+
+
 def main():
     """Main workflow: select topic, generate article, upload images, publish to WordPress."""
     print("\n" + "="*70)
@@ -1205,6 +1257,14 @@ def main():
             post_url = post["link"]
             print(f"  ✅ Published! Post ID: {post_id}")
             print(f"  URL: {post_url}")
+            
+            # Share to Facebook
+            print(f"\n📤 Sharing to Facebook...")
+            post_to_facebook(
+                title=article["title"],
+                url=post_url,
+                excerpt=article.get("excerpt", "")
+            )
         else:
             print(f"  ❌ WordPress publish error {resp.status_code}: {resp.text[:300]}")
             sys.exit(1)
