@@ -22,6 +22,182 @@ KEYWORDS_JSON_URL = "https://raw.githubusercontent.com/CenaCai/Auto-keyword-of-f
 CACHE_FILE = Path(__file__).parent / "keywords_cache.json"
 CACHE_TTL_SECONDS = 3600  # 1小时缓存
 
+# 已发布文章追踪记录
+PUBLISHED_TRACKER_FILE = Path(__file__).parent / "published_keywords.json"
+
+# 周次记录（用于轮换）
+CURRENT_WEEK = datetime.now(timezone.utc).isocalendar()[1]
+ROTATION_FILE = Path(__file__).parent / "keyword_rotation.json"
+
+
+def _load_published_tracker() -> dict:
+    """加载已发布文章追踪记录。"""
+    if PUBLISHED_TRACKER_FILE.exists():
+        try:
+            with open(PUBLISHED_TRACKER_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    return {"published_keywords": {}, "last_checked": None}
+
+
+def _save_published_tracker(data: dict):
+    """保存已发布文章追踪记录。"""
+    with open(PUBLISHED_TRACKER_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def refresh_published_from_wp(
+    wp_site: str,
+    wp_username: str,
+    wp_password: str,
+    limit: int = 100
+) -> set:
+    """
+    从 WordPress API 获取已发布文章的标题，提取关键词。
+    
+    Args:
+        wp_site: WordPress 站点 URL
+        wp_username: 用户名
+        wp_password: 应用密码
+        limit: 获取的文章数量
+    
+    Returns:
+        已发布关键词集合
+    """
+    import requests
+    
+    api = f"{wp_site}/wp-json/wp/v2/posts"
+    params = {"status": "publish", "per_page": limit}
+    
+    try:
+        resp = requests.get(api, params=params, auth=(wp_username, wp_password), timeout=30)
+        if resp.status_code != 200:
+            print(f"  ⚠️ WP API 失败: {resp.status_code}")
+            return set()
+        
+        posts = resp.json()
+        keywords = set()
+        
+        for post in posts:
+            title = post.get("title", {}).get("rendered", "")
+            if title:
+                # 清理 HTML 标签
+                import re
+                clean_title = re.sub(r"<[^>]+>", "", title).strip()
+                # 转为小写存储
+                keywords.add(clean_title.lower())
+        
+        # 保存到追踪文件
+        tracker = _load_published_tracker()
+        tracker["published_keywords"] = {k: True for k in keywords}
+        tracker["last_checked"] = datetime.now(timezone.utc).isoformat()
+        tracker["count"] = len(keywords)
+        _save_published_tracker(tracker)
+        
+        print(f"  ✅ 已追踪 {len(keywords)} 篇已发布文章")
+        return keywords
+    
+    except Exception as e:
+        print(f"  ⚠️ WP 获取失败: {e}")
+        return set()
+
+
+def get_published_keywords() -> set:
+    """获取已发布的关键词集合。"""
+    tracker = _load_published_tracker()
+    return set(tracker.get("published_keywords", {}).keys())
+
+
+
+def _load_rotation() -> dict:
+    """加载关键词轮换记录。"""
+    if ROTATION_FILE.exists():
+        try:
+            with open(ROTATION_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    return {"week": CURRENT_WEEK, "used_keywords": [], "content_gaps_used": []}
+
+
+
+def _save_rotation(data: dict):
+    """保存关键词轮换记录。"""
+    global CURRENT_WEEK
+    current_week = datetime.now(timezone.utc).isocalendar()[1]
+    
+    # 新一周开始时重置
+    if data.get("week") != current_week:
+        data = {"week": current_week, "used_keywords": [], "content_gaps_used": []}
+    
+    with open(ROTATION_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def mark_keyword_used(keyword: str, is_content_gap: bool = False):
+    """标记关键词已使用。"""
+    data = _load_rotation()
+    
+    if is_content_gap:
+        if "content_gaps_used" not in data:
+            data["content_gaps_used"] = []
+        if keyword not in data["content_gaps_used"]:
+            data["content_gaps_used"].append(keyword)
+    else:
+        if "used_keywords" not in data:
+            data["used_keywords"] = []
+        if keyword not in data["used_keywords"]:
+            data["used_keywords"].append(keyword)
+    
+    _save_rotation(data)
+    print(f"  📝 已标记: {keyword} (内容缺口:{is_content_gap})")
+
+
+def get_rotation_report() -> dict:
+    """获取本周轮换报告。"""
+    data = _load_rotation()
+    return {
+        "week": data.get("week", CURRENT_WEEK),
+        "content_gaps_used": data.get("content_gaps_used", []),
+        "other_used": data.get("used_keywords", []),
+        "total_content_gaps": len(data.get("content_gaps_used", [])),
+        "total_other": len(data.get("used_keywords", [])),
+    }
+
+
+def can_use_keyword(
+    keyword: str,
+    exclude_list: list = None,
+    require_fresh: bool = False
+) -> bool:
+    """
+    检查关键词是否可用。
+    
+    Args:
+        keyword: 要检查的关键词
+        exclude_list: 额外排除列表
+        require_fresh: 是否要求本周未使用过
+    
+    Returns:
+        True 如果关键词可用
+    """
+    # 检查排除列表
+    if exclude_list and keyword.lower() in [k.lower() for k in exclude_list]:
+        return False
+    
+    # 检查轮换记录（本周已使用）
+    rotation = _load_rotation()
+    all_used = (
+        rotation.get("content_gaps_used", []) +
+        rotation.get("used_keywords", [])
+    )
+    if keyword.lower() in [k.lower() for k in all_used]:
+        if require_fresh:
+            return False
+    
+    return True
+
 
 def fetch_keywords(force_refresh: bool = False) -> dict:
     """
@@ -210,7 +386,12 @@ def get_keyword_suggestions(
 
 def pick_keyword_for_blog(
     strategy: str = "balanced",
-    exclude_recent: list = None
+    exclude_recent: list = None,
+    force_content_gap: bool = False,
+    refresh_wp: bool = False,
+    wp_site: str = "",
+    wp_username: str = "",
+    wp_password: str = ""
 ) -> dict:
     """
     为博客文章选择关键词。
@@ -221,43 +402,104 @@ def pick_keyword_for_blog(
             - "quick_win": 快速获胜（低竞争优先）
             - "high_potential": 高潜力（高搜索量优先）
             - "transactional": 交易意图优先
+            - "content_gap": 强制内容缺口（高搜索量 + 零排名）
         exclude_recent: 最近用过的关键词（避免重复）
+        force_content_gap: 强制使用内容缺口关键词（每周前2-3篇优先）
+        refresh_wp: 是否从 WordPress 刷新已发布文章列表
+        wp_site: WordPress 站点 URL
+        wp_username: WordPress 用户名
+        wp_password: WordPress 密码
     
     Returns:
         选中的关键词数据（含选择理由）
     """
     exclude_set = set(kw.lower() for kw in (exclude_recent or []))
     
-    # 根据策略获取候选
-    if strategy == "quick_win":
-        candidates = get_top_keywords(min_score=50, min_volume=100, limit=30)
-        reason_template = "低竞争高分关键词，容易排名"
-    elif strategy == "high_potential":
-        candidates = get_top_keywords(min_score=40, min_volume=300, limit=30)
-        reason_template = "高搜索量关键词，流量潜力大"
-    elif strategy == "transactional":
-        candidates = get_top_keywords(min_score=40, min_volume=100, intent="transactional", limit=30)
-        reason_template = "交易意图关键词，转化潜力高"
-    else:  # balanced
-        candidates = get_top_keywords(min_score=45, min_volume=150, limit=50)
-        reason_template = "平衡搜索量、评分和竞争度"
+    # 可选：从 WordPress 刷新已发布文章
+    if refresh_wp and wp_site and wp_username and wp_password:
+        published = refresh_published_from_wp(wp_site, wp_username, wp_password)
+        exclude_set.update(published)
+    else:
+        # 加载本地已发布追踪
+        published = get_published_keywords()
+        exclude_set.update(k.lower() for k in published)
     
-    # 排除最近用过的
-    candidates = [kw for kw in candidates if kw["keyword"].lower() not in exclude_set]
+    # 加载本周轮换记录
+    rotation = _load_rotation()
+    used_this_week = (
+        rotation.get("content_gaps_used", []) +
+        rotation.get("used_keywords", [])
+    )
+    exclude_set.update(k.lower() for k in used_this_week)
     
-    if not candidates:
-        # 降级：使用宽松条件
-        candidates = get_top_keywords(min_score=30, min_volume=50, limit=20)
+    # 本周内容缺口配额检查
+    content_gaps_quota = 3  # 每周至少3篇内容缺口
+    content_gaps_used = len(rotation.get("content_gaps_used", []))
+    
+    # 强制内容缺口 or 还没用完配额
+    if force_content_gap or strategy == "content_gap" or content_gaps_used < content_gaps_quota:
+        # 获取内容缺口关键词
+        data = fetch_keywords()
+        all_kws = []
+        for cat, items in data.get("keywords", {}).items():
+            for kw in items:
+                kw["_category"] = cat
+                all_kws.append(kw)
+        
+        # 内容缺口：高搜索量 + 零点击/展示
+        candidates = [
+            kw for kw in all_kws
+            if kw.get("volume", 0) >= 200
+            and kw.get("clicks", 0) == 0
+            and kw.get("score", 0) >= 40
+        ]
+        candidates.sort(key=lambda x: x.get("volume", 0), reverse=True)
+        
+        # 排除已使用的
         candidates = [kw for kw in candidates if kw["keyword"].lower() not in exclude_set]
-        reason_template = "降级选择：宽松条件"
+        
+        if candidates:
+            selected = random.choices(candidates, weights=[kw.get("score", 50) for kw in candidates], k=1)[0]
+            is_content_gap = True
+            reason_template = f"内容缺口 (本周已用:{content_gaps_used}/{content_gaps_quota})"
+        else:
+            # 没内容缺口了，用普通关键词
+            candidates = get_top_keywords(min_score=45, min_volume=150, limit=50)
+            candidates = [kw for kw in candidates if kw["keyword"].lower() not in exclude_set]
+            if not candidates:
+                candidates = get_top_keywords(min_score=30, min_volume=50, limit=20)
+            selected = random.choices(candidates, weights=[kw.get("score", 50) for kw in candidates], k=1)[0]
+            is_content_gap = False
+            reason_template = "降级选择：无内容缺口可用"
+    else:
+        # 根据策略获取候选
+        if strategy == "quick_win":
+            candidates = get_top_keywords(min_score=50, min_volume=100, limit=30)
+            reason_template = "低竞争高分关键词，容易排名"
+        elif strategy == "high_potential":
+            candidates = get_top_keywords(min_score=40, min_volume=300, limit=30)
+            reason_template = "高搜索量关键词，流量潜力大"
+        elif strategy == "transactional":
+            candidates = get_top_keywords(min_score=40, min_volume=100, intent="transactional", limit=30)
+            reason_template = "交易意图关键词，转化潜力高"
+        else:  # balanced
+            candidates = get_top_keywords(min_score=45, min_volume=150, limit=50)
+            reason_template = "平衡搜索量、评分和竞争度"
+        
+        # 排除已使用的
+        candidates = [kw for kw in candidates if kw["keyword"].lower() not in exclude_set]
+        
+        if not candidates:
+            # 降级：使用宽松条件
+            candidates = get_top_keywords(min_score=30, min_volume=50, limit=20)
+            candidates = [kw for kw in candidates if kw["keyword"].lower() not in exclude_set]
+            reason_template = "降级选择：宽松条件"
+        
+        selected = random.choices(candidates, weights=[kw.get("score", 50) for kw in candidates], k=1)[0]
+        is_content_gap = False
     
-    if not candidates:
-        return None
-    
-    # 随机选择一个（避免每次都选最高分的，增加多样性）
-    # 但权重倾向于高评分
-    weights = [kw.get("score", 50) for kw in candidates]
-    selected = random.choices(candidates, weights=weights, k=1)[0]
+    # 标记关键词已使用
+    mark_keyword_used(selected["keyword"], is_content_gap=is_content_gap)
     
     return {
         "keyword": selected["keyword"],
@@ -267,6 +509,8 @@ def pick_keyword_for_blog(
         "intent": selected.get("intent", "informational"),
         "category": selected.get("_category", "other"),
         "sources": selected.get("sources", []),
+        "is_content_gap": is_content_gap,
+        "content_gaps_used_this_week": content_gaps_used,
         "reason": f"{reason_template} (评分:{selected.get('score',0)}, 搜索量:{selected.get('volume',0)}, 难度:{selected.get('difficulty',0)})",
         "data_points": _generate_data_points(selected),
     }

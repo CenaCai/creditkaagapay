@@ -23,7 +23,13 @@ from datetime import datetime, timezone
 
 # 导入动态关键词客户端
 try:
-    from keyword_client import pick_keyword_for_blog, get_keyword_suggestions, fetch_keywords
+    from keyword_client import (
+        pick_keyword_for_blog,
+        get_keyword_suggestions,
+        fetch_keywords,
+        get_rotation_report,
+        refresh_published_from_wp,
+    )
     KEYWORD_CLIENT_AVAILABLE = True
 except ImportError:
     KEYWORD_CLIENT_AVAILABLE = False
@@ -31,8 +37,7 @@ except ImportError:
 
 # ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
-WP_SITE = "https://www.creditkaagapay.com"
+# ---------------------------------------------------------------------------WP_SITE = "https://www.creditkaagapay.com"
 WP_API = f"{WP_SITE}/wp-json/wp/v2"
 WP_USERNAME = os.environ.get("WP_USERNAME", "")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD", "")
@@ -456,22 +461,52 @@ Return 3-5 news items. If you cannot find any news from the last 24 hours, retur
 
 def _generate_seo_topic():
     """Generate an SEO topic from dynamic keyword data or fallback to hardcoded lists."""
+    # 检查轮换报告
+    if KEYWORD_CLIENT_AVAILABLE:
+        try:
+            rotation = get_rotation_report()
+            content_gaps_used = rotation.get("content_gaps_used", [])
+            print(f"  📊 本周已写内容缺口: {len(content_gaps_used)} 篇")
+        except:
+            pass
+    
     # 尝试使用动态关键词（优先）
     if KEYWORD_CLIENT_AVAILABLE:
         try:
-            # 随机选择策略：balanced 50%, quick_win 30%, high_potential 20%
+            # 检查是否需要强制内容缺口
+            # 每周前3篇强制内容缺口，之后随机
+            rotation = get_rotation_report() if KEYWORD_CLIENT_AVAILABLE else {"content_gaps_used": []}
+            force_content_gap = len(rotation.get("content_gaps_used", [])) < 3
+            
+            # 随机选择策略（当不需要强制内容缺口时）
             strategy_roll = random.random()
-            if strategy_roll < 0.5:
+            if force_content_gap:
+                strategy = "content_gap"
+                print(f"  🎯 强制内容缺口模式 (已用:{len(rotation.get('content_gaps_used', []))}/3)")
+            elif strategy_roll < 0.5:
                 strategy = "balanced"
             elif strategy_roll < 0.8:
                 strategy = "quick_win"
             else:
                 strategy = "high_potential"
             
-            dynamic_kw = pick_keyword_for_blog(strategy=strategy)
+            # 尝试从 WordPress 刷新已发布文章（每周一次）
+            try:
+                rotation_file = Path(__file__).parent / "keyword_rotation.json"
+                if not rotation_file.exists():
+                    print("  🔄 首次运行，刷新已发布文章列表...")
+                    refresh_published_from_wp(WP_SITE, WP_USERNAME, WP_APP_PASSWORD)
+            except:
+                pass
+            
+            dynamic_kw = pick_keyword_for_blog(
+                strategy=strategy,
+                force_content_gap=force_content_gap,
+            )
             
             if dynamic_kw:
                 keyword = dynamic_kw["keyword"]
+                is_content_gap = dynamic_kw.get("is_content_gap", False)
                 angle = "practical guide with real bank rates and step-by-step application tips"
                 for aw, ang in AUDIENCE_ANGLES.items():
                     if aw in keyword.lower():
@@ -488,7 +523,8 @@ def _generate_seo_topic():
                 if "credit score" in kw_lower or "CIC" in kw_lower:
                     core = "credit"
                 
-                print(f"  🎯 动态关键词: {keyword} (评分:{dynamic_kw['score']}, 搜索量:{dynamic_kw['volume']}, 策略:{strategy})")
+                content_gap_tag = " [内容缺口]" if is_content_gap else ""
+                print(f"  🎯 动态关键词: {keyword}{content_gap_tag} (评分:{dynamic_kw['score']}, 搜索量:{dynamic_kw['volume']}, 策略:{strategy})")
                 
                 return {
                     "keyword": keyword,
@@ -499,6 +535,7 @@ def _generate_seo_topic():
                     "is_news": False,
                     "score": dynamic_kw.get("score", 0),
                     "volume": dynamic_kw.get("volume", 0),
+                    "is_content_gap": is_content_gap,
                 }
         except Exception as e:
             print(f"  ⚠️ 动态关键词获取失败: {e}，使用硬编码关键词")
