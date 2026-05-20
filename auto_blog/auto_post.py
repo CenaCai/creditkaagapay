@@ -21,6 +21,14 @@ import io
 import requests
 from datetime import datetime, timezone
 
+# 导入动态关键词客户端
+try:
+    from keyword_client import pick_keyword_for_blog, get_keyword_suggestions, fetch_keywords
+    KEYWORD_CLIENT_AVAILABLE = True
+except ImportError:
+    KEYWORD_CLIENT_AVAILABLE = False
+    print("⚠️ keyword_client.py not found, using hardcoded keywords")
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -447,7 +455,55 @@ Return 3-5 news items. If you cannot find any news from the last 24 hours, retur
 
 
 def _generate_seo_topic():
-    """Generate an SEO topic from keyword lists (3-tier system)."""
+    """Generate an SEO topic from dynamic keyword data or fallback to hardcoded lists."""
+    # 尝试使用动态关键词（优先）
+    if KEYWORD_CLIENT_AVAILABLE:
+        try:
+            # 随机选择策略：balanced 50%, quick_win 30%, high_potential 20%
+            strategy_roll = random.random()
+            if strategy_roll < 0.5:
+                strategy = "balanced"
+            elif strategy_roll < 0.8:
+                strategy = "quick_win"
+            else:
+                strategy = "high_potential"
+            
+            dynamic_kw = pick_keyword_for_blog(strategy=strategy)
+            
+            if dynamic_kw:
+                keyword = dynamic_kw["keyword"]
+                angle = "practical guide with real bank rates and step-by-step application tips"
+                for aw, ang in AUDIENCE_ANGLES.items():
+                    if aw in keyword.lower():
+                        angle = ang
+                        break
+                
+                # Detect core word for category and image
+                kw_lower = keyword.lower()
+                core = "loan"
+                for cw in sorted(CORE_WORDS, key=len, reverse=True):
+                    if cw in kw_lower:
+                        core = cw
+                        break
+                if "credit score" in kw_lower or "CIC" in kw_lower:
+                    core = "credit"
+                
+                print(f"  🎯 动态关键词: {keyword} (评分:{dynamic_kw['score']}, 搜索量:{dynamic_kw['volume']}, 策略:{strategy})")
+                
+                return {
+                    "keyword": keyword,
+                    "angle": angle,
+                    "category": CORE_CATEGORIES.get(core, "Loans"),
+                    "img_query": IMG_QUERIES.get(core, "loan finance philippines"),
+                    "data_points": dynamic_kw.get("data_points", CATEGORY_DATA_POINTS.get(core, CATEGORY_DATA_POINTS["loan"])),
+                    "is_news": False,
+                    "score": dynamic_kw.get("score", 0),
+                    "volume": dynamic_kw.get("volume", 0),
+                }
+        except Exception as e:
+            print(f"  ⚠️ 动态关键词获取失败: {e}，使用硬编码关键词")
+    
+    # Fallback: 使用硬编码关键词列表（3-tier system）
     # Tier selection: 60% Tier 1, 30% Tier 2, 10% Tier 3
     tier_roll = random.random()
     if tier_roll < 0.6:
