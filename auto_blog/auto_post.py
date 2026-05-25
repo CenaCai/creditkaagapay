@@ -46,6 +46,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 FB_PAGE_ACCESS_TOKEN = os.environ.get("FB_PAGE_ACCESS_TOKEN", "")
 FB_PAGE_ID = os.environ.get("FB_PAGE_ID", "")
+INDEXNOW_KEY = os.environ.get("INDEXNOW_KEY", "")
 
 PEXELS_API = "https://api.pexels.com/v1"
 
@@ -1219,6 +1220,58 @@ def post_to_facebook(title: str, url: str, excerpt: str = "") -> bool:
         return False
 
 
+# ---------------------------------------------------------------------------
+# IndexNow Submission (Bing / Yandex instant indexing)
+# ---------------------------------------------------------------------------
+
+def indexnow_submit(urls):
+    """
+    Submit URLs to Bing IndexNow for instant indexing (free protocol).
+    Key must be hosted at:  https://www.creditkaagapay.com/{INDEXNOW_KEY}.txt
+    Returns True if at least one endpoint accepted the submission.
+    """
+    if not INDEXNOW_KEY:
+        print("  ⚠️  INDEXNOW_KEY not set — skipping IndexNow submission")
+        return False
+
+    if isinstance(urls, str):
+        urls = [urls]
+
+    host = WP_SITE.replace("https://", "").replace("http://", "").rstrip("/")
+    key_location = f"{WP_SITE}/{INDEXNOW_KEY}.txt"
+
+    payload = {
+        "host": host,
+        "key": INDEXNOW_KEY,
+        "keyLocation": key_location,
+        "urlList": urls,
+    }
+
+    endpoints = [
+        "https://www.bing.com/indexnow",
+        "https://search.indexnow.org/indexnow",
+    ]
+
+    for endpoint in endpoints:
+        try:
+            resp = requests.post(
+                endpoint,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15,
+            )
+            if resp.status_code in (200, 202):
+                print(f"  ✅ IndexNow: submitted {len(urls)} URL(s) via {endpoint.split('/')[2]}")
+                return True
+            else:
+                print(f"  ⚠️  IndexNow {endpoint.split('/')[2]} returned {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            print(f"  ❌ IndexNow submission to {endpoint.split('/')[2]} failed: {e}")
+
+    print("  ❌ All IndexNow endpoints failed")
+    return False
+
+
 def main():
     """Main workflow: select topic, generate article, upload images, publish to WordPress."""
     print("\n" + "="*70)
@@ -1350,6 +1403,10 @@ def main():
             post_url = post["link"]
             print(f"  ✅ Published! Post ID: {post_id}")
             print(f"  URL: {post_url}")
+
+            # Submit to IndexNow (Bing / Yandex instant indexing)
+            print(f"\n📡 Submitting to IndexNow...")
+            indexnow_submit(post_url)
             
             # Share to Facebook
             print(f"\n📤 Sharing to Facebook...")
