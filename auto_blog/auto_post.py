@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 try:
     from keyword_client import (
         pick_keyword_for_blog,
+        pick_paa_question_for_blog,
         get_keyword_suggestions,
         fetch_keywords,
         get_rotation_report,
@@ -484,12 +485,54 @@ def _generate_seo_topic():
             if force_content_gap:
                 strategy = "content_gap"
                 print(f"  🎯 强制内容缺口模式 (已用:{len(rotation.get('content_gaps_used', []))}/3)")
-            elif strategy_roll < 0.5:
+            elif strategy_roll < 0.3:
+                strategy = "paa_question"
+                print(f"  🎯 PAA 问题模式 (命中用户搜索意图)")
+            elif strategy_roll < 0.65:
                 strategy = "balanced"
-            elif strategy_roll < 0.8:
+            elif strategy_roll < 0.85:
                 strategy = "quick_win"
             else:
                 strategy = "high_potential"
+            
+            # PAA 问题选题
+            if strategy == "paa_question":
+                try:
+                    paa_result = pick_paa_question_for_blog()
+                    if paa_result:
+                        keyword = paa_result["keyword"]
+                        is_content_gap = True  # PAA 问题视为内容缺口
+                        angle = "FAQ-style answer with practical examples and real rates"
+                        
+                        kw_lower = keyword.lower()
+                        core = "loan"
+                        for cw in sorted(CORE_WORDS, key=len, reverse=True):
+                            if cw in kw_lower:
+                                core = cw
+                                break
+                        if "credit score" in kw_lower or "cic" in kw_lower:
+                            core = "credit"
+                        
+                        print(f"  ❓ PAA 问题: {keyword} (意图:{paa_result.get('intent','?')}, 评分:{paa_result['score']})")
+                        
+                        return {
+                            "keyword": keyword,
+                            "angle": angle,
+                            "category": CORE_CATEGORIES.get(core, "Loans"),
+                            "img_query": IMG_QUERIES.get(core, "loan finance philippines"),
+                            "data_points": paa_result.get("data_points", CATEGORY_DATA_POINTS.get(core, CATEGORY_DATA_POINTS["loan"])),
+                            "is_news": False,
+                            "score": paa_result.get("score", 0),
+                            "volume": paa_result.get("volume", 0),
+                            "is_content_gap": True,
+                            "is_paa": True,
+                        }
+                    else:
+                        print("  ⚠️ 无可用 PAA 问题，降级为 balanced 策略")
+                        strategy = "balanced"
+                except Exception as e:
+                    print(f"  ⚠️ PAA 问题获取失败: {e}，降级为 balanced 策略")
+                    strategy = "balanced"
             
             # 尝试从 WordPress 刷新已发布文章（每周一次）
             try:

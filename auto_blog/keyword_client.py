@@ -384,6 +384,108 @@ def get_keyword_suggestions(
     return suggestions
 
 
+def get_paa_questions(
+    limit: int = 20,
+    intent: Optional[str] = None,
+    min_score: int = 40,
+    exclude_keywords: list = None,
+) -> list:
+    """
+    获取 PAA (People Also Ask) 问题列表。
+    
+    这些问题直接来自 Google 搜索结果，代表用户真实搜索意图。
+    适合用来生成 FAQ 型博客文章。
+    
+    Args:
+        limit: 返回数量
+        intent: 意图筛选 (how_to, informational, yes_no, comparison, cost, requirements, trust)
+        min_score: 最低评分
+        exclude_keywords: 排除的问题列表
+    
+    Returns:
+        PAA 问题列表
+    """
+    data = fetch_keywords()
+    paa_items = data.get("keywords", {}).get("paa_questions", [])
+    
+    exclude_set = set(kw.lower() for kw in (exclude_keywords or []))
+    
+    results = []
+    for item in paa_items:
+        if item.get("score", 0) < min_score:
+            continue
+        if intent and item.get("intent") != intent:
+            continue
+        if item.get("question", "").lower() in exclude_set:
+            continue
+        results.append(item)
+    
+    
+    results.sort(key=lambda x: x.get("score", 0), reverse=True)
+    return results[:limit]
+
+
+def pick_paa_question_for_blog(
+    exclude_recent: list = None,
+    intent: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    为博客文章选择一个 PAA 问题。
+    
+    返回的问题适合写成 FAQ 型文章，直接命中搜索意图。
+    
+    Args:
+        exclude_recent: 最近用过的问题
+        intent: 偏好的意图类型
+    
+    Returns:
+        选中的 PAA 问题数据，或 None
+    """
+    exclude_set = set(kw.lower() for kw in (exclude_recent or []))
+    
+    # 加载已发布追踪
+    published = get_published_keywords()
+    exclude_set.update(k.lower() for k in published)
+    
+    # 加载轮换记录
+    rotation = _load_rotation()
+    used_this_week = (
+        rotation.get("content_gaps_used", []) +
+        rotation.get("used_keywords", [])
+    )
+    exclude_set.update(k.lower() for k in used_this_week)
+    
+    candidates = get_paa_questions(
+        limit=30,
+        intent=intent,
+        min_score=35,
+        exclude_keywords=list(exclude_set),
+    )
+    
+    if not candidates:
+        return None
+    
+    selected = random.choices(candidates, weights=[c.get("score", 50) for c in candidates], k=1)[0]
+    
+    # 标记已使用
+    mark_keyword_used(selected["question"], is_content_gap=True)
+    
+    return {
+        "keyword": selected["question"],  # 问题作为关键词
+        "question": selected["question"],
+        "score": selected.get("score", 0),
+        "volume": selected.get("volume", 0),
+        "difficulty": selected.get("difficulty", 50),
+        "intent": selected.get("intent", "informational"),
+        "category": "paa_question",
+        "sources": ["paa"],
+        "is_content_gap": True,
+        "is_paa": True,
+        "reason": f"PAA 问题选题 (意图:{selected.get('intent','?')}, 评分:{selected.get('score',0)})",
+        "data_points": _generate_data_points(selected),
+    }
+
+
 def pick_keyword_for_blog(
     strategy: str = "balanced",
     exclude_recent: list = None,
