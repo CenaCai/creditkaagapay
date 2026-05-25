@@ -38,7 +38,8 @@ except ImportError:
 
 # ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------WP_SITE = "https://www.creditkaagapay.com"
+# ---------------------------------------------------------------------------
+WP_SITE = "https://www.creditkaagapay.com"
 WP_API = f"{WP_SITE}/wp-json/wp/v2"
 WP_USERNAME = os.environ.get("WP_USERNAME", "")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD", "")
