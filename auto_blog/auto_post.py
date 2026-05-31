@@ -1049,6 +1049,15 @@ STRUCTURE:
 3. Key Takeaways box (styled div with "Updated {current_date}" badge + 4-5 bullet points)
 4. Main content in 3-4 sections with H2 headings (use keyword variants in headings)
 5. At least ONE comparison table (HTML <table>) with real numbers from named institutions
+   TABLE RULES (ANTI-DUPLICATION — CRITICAL):
+   - Maximum ONE comparison table per article.
+   - If you need to compare the same products from multiple angles, use DIFFERENT data dimensions:
+     * Article 1: compare by interest rate
+     * Article 2: compare by approval speed
+     * Article 3: compare by maximum loanable amount
+     * Article 4: compare by eligibility requirements
+   - Never repeat the same comparison table with identical rows/columns in a single article.
+   - Do NOT reuse the same table structure from your previous articles about similar products.
 6. FAQ section: EXACTLY 3 questions as H3 with "?" - answer in the next <p>. Use these as guidance:
 {faq_hint_text}
    FAQ RULES:
@@ -1077,7 +1086,15 @@ FORMATTING:
 - Key Takeaways: <div style="background:#f0f7ff;border-left:4px solid #2563eb;padding:20px;margin:20px 0;border-radius:8px;"><p style="margin:0 0 8px;font-size:0.85em;color:#6b7280;">Updated {current_date}</p><h3 style="margin:0 0 12px;">Key Takeaways</h3>...bullet points...</div>
 - Internal links: use <a href="URL">anchor text</a> directly
 
-LENGTH: 1500-1800 words. Every word must earn its place.
+DIFFERENTIAL CONTENT RULES (MUST include at least ONE — do NOT repeat from previous articles):
+- A specific user case/story (real or simulated scenario with name and situation)
+- OR a unique data point or calculation example (e.g., "Borrowing ₱20k at 3%/mo for 6 months costs ₱X total")
+- OR a risk warning/tip others haven't mentioned (e.g., "The hidden danger most articles skip...")
+- OR targeted advice for a specific group: OFW / freelancer / student / gig worker / new graduate
+- STATISTIC RULE: Do NOT use "53% of Filipinos" or any stat used in previous articles. Find a DIFFERENT BSP/PSA/SEC/statistics source each time. Cite year and source.
+- Each article MUST feel like it couldn't have been written about the same topic as any other article.
+
+LENGTH: 1500-2500 words. Every word must earn its place.
 
 OUTPUT (valid JSON only, no markdown fences):
 {{
@@ -1121,8 +1138,62 @@ OUTPUT (valid JSON only, no markdown fences):
         )
         article["content"] += article_schema
         
+        # ================================================================
+        # AI Self-Check: Uniqueness Verification (Rule 3)
+        # ================================================================
+        existing_titles_raw = []
+        try:
+            wp_auth = (WP_USERNAME, WP_APP_PASSWORD)
+            resp_existing = requests.get(
+                f"{WP_API}/posts",
+                params={"status": "publish", "per_page": 20, "_fields": "title"},
+                auth=wp_auth,
+                timeout=15
+            )
+            if resp_existing.status_code == 200:
+                for p in resp_existing.json():
+                    import re as re2
+                    clean = re2.sub(r"<[^>]+>", "", p.get("title", {}).get("rendered", ""))
+                    if clean:
+                        existing_titles_raw.append(clean)
+        except Exception:
+            pass  # Skip check if WP API fails
+
+        if existing_titles_raw:
+            existing_titles_str = "\n".join(f"  - {t}" for t in existing_titles_raw[:20])
+            check_prompt = f"""You are a quality reviewer. Check the following article against these RULES and respond with EXACTLY one of the two formats below.
+
+RULES:
+3.1. Does the article have ANY table or paragraph that appears repeated 2+ times? Answer YES or NO.
+3.2. Content overlap check: Compare the article title/content to the existing titles below.
+     Does the new article overlap >40% in topic/coverage with any existing title?
+     Existing titles:
+{existing_titles_str}
+     New article title: {article['title']}
+3.3. Author name consistency: Does the author byline correctly show "Zia Tan"?
+     Answer YES if it shows "Zia Tan", answer NO if it shows "Juan dela Cruz" or any other name.
+
+NEW ARTICLE CONTENT (first 500 chars):
+{article['content'][:500]}
+
+Respond with EXACTLY one of these two formats (no extra text):
+PASS
+
+---
+REJECT
+Reason: <explain which rule failed and why>
+"""
+            check_result = call_gemini_api(check_prompt, max_tokens=500, temperature=0)
+            if check_result:
+                check_result = check_result.strip()
+                if check_result.startswith("REJECT"):
+                    print(f"  ⚠️ AI self-check REJECTED: {check_result}")
+                    return None
+                else:
+                    print(f"  ✅ AI self-check PASSED")
+        
         return article
-    
+
     except json.JSONDecodeError as e:
         print(f"  ❌ JSON 解析失败: {e}")
         print(f"  响应内容: {text[:500]}")
@@ -1316,6 +1387,71 @@ def indexnow_submit(urls):
     return False
 
 
+# ============================================================================
+# Pre-Publish Quality Gate (Rule 5)
+# ============================================================================
+def pre_publish_check(article: dict, existing_articles: list) -> tuple:
+    """
+    Automated quality gate before publishing to WordPress.
+    
+    Returns:
+        (pass: bool, reason: str)
+    """
+    print("\n🚦 Running pre-publish quality gate...")
+    
+    # 1. Internal duplication check
+    content = article.get("content", "")
+    
+    # Check for repeated tables
+    table_matches = re.findall(r"<table[^>]*>.*?</table>", content, re.DOTALL)
+    table_count = len(table_matches)
+    if table_count > 1:
+        return False, f"REJECT: Found {table_count} tables (max 1 allowed per article)"
+    
+    # Check for repeated paragraphs (simple heuristic: same text appearing twice)
+    paragraphs = re.findall(r"<p[^>]*>(.{50,500}?)</p>", content, re.DOTALL)
+    seen_paragraphs = {}
+    for p in paragraphs:
+        # Normalize: strip HTML, whitespace, lowercase
+        norm = re.sub(r"<[^>]+>", "", p).strip().lower()
+        norm = re.sub(r"\s+", " ", norm)
+        if len(norm) > 80:  # Only flag substantial paragraphs
+            if norm in seen_paragraphs:
+                return False, f"REJECT: Duplicate paragraph found (internal duplication)"
+            seen_paragraphs[norm] = True
+    
+    # 2. Keyword cannibalization check
+    new_title_words = set(re.sub(r"<[^>]+>", "", article.get("title", "")).lower().split())
+    for existing in existing_articles:
+        existing_title_words = set(re.sub(r"<[^>]+>", "", existing.get("title", "")).lower().split())
+        if len(new_title_words) > 0 and len(existing_title_words) > 0:
+            overlap = len(new_title_words & existing_title_words)
+            total = len(new_title_words | existing_title_words)
+            if total > 0:
+                similarity = overlap / total
+                if similarity > 0.7:
+                    return False, f"REJECT: Keyword cannibalization — title too similar to: {existing.get('title', 'unknown')}"
+    
+    # 3. Author name consistency check
+    if "Juan dela Cruz" in content or "juan dela cruz" in content.lower():
+        return False, "REJECT: Author name 'Juan dela Cruz' found — must use 'Zia Tan'"
+    
+    # 4. Minimum quality check (basic heuristic)
+    word_count = len(content.split())
+    if word_count < 800:
+        return False, f"REJECT: Word count too low ({word_count} words, minimum 800)"
+    
+    if word_count > 100:
+        # Check for required elements
+        if "<table" not in content.lower():
+            return False, "REJECT: No comparison table found in article"
+        if "faq" not in content.lower() and "<h3" not in content.lower():
+            return False, "REJECT: No FAQ/section headings found"
+    
+    print(f"  ✅ Quality gate passed ({word_count} words, {table_count} table(s))")
+    return True, "PASS"
+
+
 def main():
     """Main workflow: select topic, generate article, upload images, publish to WordPress."""
     print("\n" + "="*70)
@@ -1373,6 +1509,31 @@ def main():
         sys.exit(1)
     
     print(f"  ✅ Article generated: {article['title']}")
+    
+    # ── Pre-publish quality gate ─────────────────────────────────────────────
+    print("\n🚦 Running pre-publish quality gate...")
+    auth = (WP_USERNAME, WP_APP_PASSWORD)
+    existing_articles = []
+    try:
+        resp_existing = requests.get(
+            f"{WP_API}/posts",
+            params={"status": "publish", "per_page": 30, "_fields": "title,link"},
+            auth=auth,
+            timeout=15
+        )
+        if resp_existing.status_code == 200:
+            existing_articles = [
+                {"title": re.sub(r"<[^>]+>", "", p.get("title", {}).get("rendered", "")), "url": p.get("link", "")}
+                for p in resp_existing.json()
+            ]
+            print(f"  📚 Fetched {len(existing_articles)} existing articles for comparison")
+    except Exception as e:
+        print(f"  ⚠️ Could not fetch existing articles: {e}")
+
+    gate_pass, gate_reason = pre_publish_check(article, existing_articles)
+    if not gate_pass:
+        print(f"  ❌ {gate_reason}")
+        sys.exit(1)
     
     # Publish to WordPress
     print(f"\n📤 Publishing to WordPress...")
